@@ -27,7 +27,7 @@ import re
 class TreeWalker(object):
     """
     Takes an AST of a parsed smarty program
-    and returns the parsed Twig template. This
+    and returns the parsed PHTML template. This
     is meant as a helper it does not understand 100%
     of the Smarty synatx.
     """
@@ -44,18 +44,18 @@ class TreeWalker(object):
         'else': '{% else %}',
     }
     
-    def __init__(self, ast, twig_extension="", twig_path=""):
+    def __init__(self, ast, extension="", path=""):
         """
         The AST structure is created by pyPEG.
         """
-        self.twig_extension = 'twig'
-        self.twig_path = ''
+        self.extension = 'phtml'
+        self.path = ''
         
-        if twig_extension:
-           self.twig_extension = twig_extension
+        if extension:
+           self.extension = extension 
            
-        if twig_path:
-            self.twig_path = twig_path
+        if path:
+            self.path = path
         
         # Top level handler for walking the tree.
         self.code = self.smarty_language(ast, '')        
@@ -85,9 +85,8 @@ class TreeWalker(object):
         
     def literal(self, ast, code):
         """
-        A literal block in smarty, we can just
-        drop the {literal} tags because Twig
-        is less ambiguous.
+        A literal block in smarty, we can just drop the {literal} tags because 
+        php is less ambiguous.
         """
         literal_string = ast
         literal_string = literal_string.replace('{/literal}', '')
@@ -160,7 +159,7 @@ class TreeWalker(object):
         #   
         #   "%s text %s"|format(foo, bar)
         #
-        # format is a Twig modifier similar to sprintf.
+        # format is a php modifier similar to sprintf.
         if len(function_params_string):
             code = "%s%s\"|format(%s)" % (
                 code,
@@ -178,7 +177,7 @@ class TreeWalker(object):
     def function_statement(self, ast, code):
         """
         Smarty functions are mapped to a modifier in
-        Twig with a hash as input.
+        php with a hash as input.
         """        
         # The variable that starts a function statement.
         function_name = self.__walk_tree (
@@ -212,14 +211,14 @@ class TreeWalker(object):
             function_params[symbol] = expression
         
         # Deal with the special case of an include function in
-        # smarty this should be mapped onto Twig's include tag.
+        # smarty this should be mapped onto php's include tag.
         if function_name == 'include' and function_params.has_key('file'):
             tokens = function_params['file'].split('/')
             file_name = tokens[len(tokens) - 1]
             file_name = "%s/%s.%s" % (
-                self.twig_path,
+                self.php_path,
                 re.sub(r'\..*$', '', file_name),
-                self.twig_extension
+                self.php_extension
             )
             code = "%s{%s include \"%s\" %s}" % (
                 code,
@@ -764,7 +763,7 @@ class TreeWalker(object):
                     code
                 )
             elif ast[0][0] == 'at_operator':
-              pass # Nom nom, at operators are not supported in Twig
+              pass # Nom nom, at operators are not supported in php
         
         # Maybe there was a $ on the symbol?.
         if len(ast) > 1:
@@ -790,8 +789,8 @@ class TreeWalker(object):
                     )
                 elif k == 'comment':
                     
-                    # Comments in Twig have {# not {*
-                    code = "%s{#%s#}" % (
+                    # Comments in php have <? // not {*
+                    code = "%s<? \/\/%s?>" % (
                         code,
                         v[2:len(v) - 2]
                     )
