@@ -3,8 +3,9 @@ Inspired by FreshBooks https://github.com/freshbooks/smartytotwig
 Hacked to convert to PHP
 """
 
-import re
+import re, fileinput
 from pyPEG import *
+from pyPEG import parse, keyword, _and, _not, ignore
 
 """
 Misc.
@@ -103,3 +104,8 @@ Finally, the actual language description.
 """
 def smarty_language():      return -2, [literal, if_statement, for_statement, function_statement, comment, print_statement, content]
 
+print_trace = True
+
+files = fileinput.input()
+result = parse(smarty_language(), files, True, comment)
+print result
