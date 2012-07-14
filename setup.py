@@ -12,8 +12,7 @@ setup(
     version=config.get('app:main', 'version'),
     author="Timothy Asp",
     author_email="tim@ifixit.com",
-    description="Converts Smarty templates into PHP templates. Heavily
-    modified fork of FreshBooks SmartyToTwig.",
+    description="Converts Smarty templates into PHP templates. Heavily modified fork of FreshBooks SmartyToTwig.",
     long_description=open('README.md').read(),
     entry_points={
         'console_scripts': [
@@ -24,4 +23,4 @@ setup(
     packages = ['smartytophp', 'smartytophp.test'],
     include_package_data=True,
     install_requires = ['simplejson==2.1.1'],
-k)
+)

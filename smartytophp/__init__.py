@@ -25,8 +25,8 @@ THE SOFTWARE.
 """
 
 import fileinput
-from SmartyToPHP.smarty_grammar import smarty_language
-from SmartyToPHP.pyPEG import parse, parseLine, parser
+import smarty_language
+from pyPEG import parse, parseLine, parser
 
 """
 Parse a smarty template file.

@@ -21,8 +21,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-import optparse, sys, smartytotwig
-from smartytotwig.tree_walker import TreeWalker
+import optparse, sys, fileinput
+from tree_walker import TreeWalker
+from smarty_grammer import smarty_language
+from pyPEG import parse, parseLine, parser
+
+"""
+Parse a smarty template file.
+"""
+def parse_file(file_name, language=smarty_language):
+    file_input = fileinput.FileInput(file_name)
+    return parse(language, file_input, False)
+
+"""
+Parse a Smarty template string.
+"""
+def parse_string(text, language=smarty_language):
+    p = parser()
+    result, text = p.parseLine(text, language, [], False)
+    return result[0][1] # Don't return the 'smarty_language' match.
 
 def main():
 
@@ -42,15 +59,17 @@ def main():
         help="Location of the PHTML output file."
     )
 
-    parser = optparse.OptionParser(usage='smartytotwig --smarty-file=<SOURCE TEMPLATE> --phtml-file=<OUTPUT TEMPLATE>')
+    parser = optparse.OptionParser(usage='smartytophp --smarty-file=<SOURCE TEMPLATE> --phtml-file=<OUTPUT TEMPLATE>')
     parser.add_option(opt1)
     parser.add_option(opt2)
     (options, args) = parser.parse_args(sys.argv)
 
-    if options.source and options.target:
+    print options, args
 
-        ast = smartytotwig.parse_file(options.source)
-        tree_walker = TreeWalker(ast, twig_path = options.path, twig_extension = options.extension)
+    if options.smarty and options.phtml:
+
+        ast = parse_file(options.smarty)
+        tree_walker = TreeWalker(ast, path = options.path, extension = options.extension)
 
         # Open the target phtml file and write to it
         f = open(options.target, 'w+')

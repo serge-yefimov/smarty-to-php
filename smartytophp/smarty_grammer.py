@@ -104,8 +104,8 @@ Finally, the actual language description.
 """
 def smarty_language():      return -2, [literal, if_statement, for_statement, function_statement, comment, print_statement, content]
 
-print_trace = True
+#print_trace = True
 
-files = fileinput.input()
-result = parse(smarty_language(), files, True, comment)
-print result
+#files = fileinput.input()
+#result = parse(smarty_language(), files, True, comment)
+#print result
