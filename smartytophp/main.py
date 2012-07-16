@@ -69,14 +69,14 @@ def main():
     if options.smarty and options.phtml:
 
         ast = parse_file(options.smarty)
-        tree_walker = TreeWalker(ast, path = options.path, extension = options.extension)
+        tree_walker = TreeWalker(ast)
 
         # Open the target phtml file and write to it
-        f = open(options.target, 'w+')
+        f = open(options.phtml, 'w+')
         f.write(tree_walker.code)
         f.close()
 
-        print 'Template outputted to %s' % options.target
+        print 'Template outputted to %s' % options.phtml
 
 if __name__ == "__main__":
    main()

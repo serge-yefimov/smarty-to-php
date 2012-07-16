@@ -40,8 +40,8 @@ class TreeWalker(object):
     }
     
     keywords = {
-        'foreachelse': '{% else %}',
-        'else': '{% else %}',
+        'foreachelse': '<? else ?>',
+        'else': '<? else ?>',
     }
     
     def __init__(self, ast, extension="", path=""):
@@ -116,11 +116,11 @@ class TreeWalker(object):
         variables = []
         string_contents = ''
         for k, v in ast:
+            print k, v
             
             # Plain-text.
             if k == 'text':
                 for text in v:
-                
                     string_contents = "%s%s" % (
                         string_contents,
                         text
@@ -220,7 +220,7 @@ class TreeWalker(object):
                 re.sub(r'\..*$', '', file_name),
                 self.php_extension
             )
-            code = "%s{%s include \"%s\" %s}" % (
+            code = "%s<? %s include( \"%s\" ) %s ?>" % (
                 code,
                 '%',
                 file_name,
@@ -245,7 +245,7 @@ class TreeWalker(object):
                 
         function_params_string = "%s]" % function_params_string
         
-        code = "%s{{%s|%s}}" % (
+        code = "%s<?= $%s|%s ?>" % (
             code,
             function_params_string,
             function_name
@@ -277,7 +277,7 @@ class TreeWalker(object):
                 self.keywords[expression]
             )
         
-        code = "%s{{%s}}" % (
+        code = "%s<?= $%s ?>" % (
             code,
             expression
         )
@@ -442,7 +442,7 @@ class TreeWalker(object):
         {/if}
         """ 
                    
-        code = "%s{%s if " % (
+        code = "%s<? %s if " % (
             code,
             '%'
         )
@@ -459,7 +459,7 @@ class TreeWalker(object):
             code
         )
         
-        code = "%s %s}" % (
+        code = "%s %s ?>" % (
             code,
             '%'
         )
@@ -483,7 +483,7 @@ class TreeWalker(object):
             code
         )
         
-        code = '%s{%s endif %s}' % (
+        code = '%s<? %s endif; %s ?>' % (
             code,
             '%',
             '%'
@@ -499,7 +499,7 @@ class TreeWalker(object):
         
         {elseif expression (operator expression)}
         """        
-        code = "%s{%s elseif " % (
+        code = "%s<?%s elseif " % (
             code,
             '%'
         )
@@ -516,7 +516,7 @@ class TreeWalker(object):
             code
         )
 
-        code = "%s %s}" % (
+        code = "%s %s?>" % (
             code,
             '%'
         )
@@ -537,7 +537,7 @@ class TreeWalker(object):
         The else part of an if statement.
         """
              
-        code = "%s{%s else %s}" % (
+        code = "%s<? %s else: %s ?>" % (
             code,
             '%',
             '%'
@@ -630,7 +630,7 @@ class TreeWalker(object):
         """
         &&, and operator in Smarty.
         """
-        code = '%s and ' % (
+        code = '%s && ' % (
             code
         )
         
@@ -640,7 +640,7 @@ class TreeWalker(object):
         """
         ||, or, operator in Smarty.
         """
-        code = '%s or ' % (
+        code = '%s || ' % (
             code
         )
 
@@ -705,7 +705,7 @@ class TreeWalker(object):
         
         code = handlers[ast[0][0]](ast[0][1], code)
         
-        code = "%s.%s" % (
+        code = "%s[%s]" % (
             code, 
             handlers[ast[1][0]](ast[1][1], "")
         )
@@ -790,7 +790,7 @@ class TreeWalker(object):
                 elif k == 'comment':
                     
                     # Comments in php have <? // not {*
-                    code = "%s<? \/\/%s?>" % (
+                    code = "%s<? /* %s */ ?>" % (
                         code,
                         v[2:len(v) - 2]
                     )
