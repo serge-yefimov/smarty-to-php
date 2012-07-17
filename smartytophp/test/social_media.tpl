@@ -1,4 +1,5 @@
-{assign var="which" value=$static->call('SiteSpecific', 'which')} {assign var="socialButtonsEnabled" value=$static->call('ServerConstants', 'getSetting', 'social-buttons-enabled')}
+{assign var="which" value=$static->call('SiteSpecific', 'which')} 
+{assign var="socialButtonsEnabled" value=$static->call('ServerConstants', 'getSetting', 'social-buttons-enabled')}
 
 {if $socialButtonsEnabled}
    {if $which == 'make'}

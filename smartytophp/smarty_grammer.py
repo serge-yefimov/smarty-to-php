@@ -21,6 +21,8 @@ def junk():                 return -1, [' ', '\n', '\t']
 """
 Logical operators.
 """
+def quotes():               return 
+
 def and_operator():         return [keyword('and'), '&&']
 
 def or_operator():          return [keyword('or'), '||']
@@ -64,13 +66,15 @@ def array():                return symbol, "[", 0, expression, "]"
 
 def modifier():             return [object_dereference, array, symbol, variable_string, string], -2, modifier_right, 0, ' '
 
-def expression():           return [modifier, object_dereference, array, symbol, string, variable_string]
+def expression():           return [modifier, object_dereference, array, symbol, string, variable_string, static_call]
 
 def object_dereference():   return [array, symbol], '.', expression
 
 def exp_no_modifier():      return [object_dereference, array, symbol, variable_string, string]
 
 def modifier_right():       return ('|', symbol, -1, (':', exp_no_modifier),)
+
+def static_call():          return re.compile("$static\-\>call\(.*?\)", re.S)
 
 """
 Smarty statements.
@@ -99,10 +103,16 @@ def if_statement():         return '{', keyword('if'), -1, left_paren, expressio
 
 def for_statement():        return '{', keyword('foreach'), -1, [for_from, for_item, for_name, for_key], '}', -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
 
+def assign_var():           return junk, keyword('var'), 0, '=', 0, ['"', '\''], symbol, 0, ['"', '\''], junk
+
+def assign_value():         return junk, keyword('value'), 0, '=', 0, ['"', '\''], expression, 0, ['"', '\''], junk
+
+def assign_statement():     return '{', keyword('assign'), assign_var, assign_value
+
 """
 Finally, the actual language description.
 """
-def smarty_language():      return -2, [literal, if_statement, for_statement, function_statement, comment, print_statement, content]
+def smarty_language():      return -2, [literal, if_statement, for_statement, function_statement, comment, print_statement, assign_statement, content]
 
 #print_trace = True
 
