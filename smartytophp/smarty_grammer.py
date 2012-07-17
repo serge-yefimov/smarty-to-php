@@ -74,7 +74,7 @@ def exp_no_modifier():      return [object_dereference, array, symbol, variable_
 
 def modifier_right():       return ('|', symbol, -1, (':', exp_no_modifier),)
 
-def static_call():          return re.compile("$static\-\>call\(.*?\)", re.S)
+def static_call():          return re.compile(r'\$static->call\([\'A-Za-z\'\-, ]+\)')
 
 """
 Smarty statements.
@@ -105,9 +105,9 @@ def for_statement():        return '{', keyword('foreach'), -1, [for_from, for_i
 
 def assign_var():           return junk, keyword('var'), 0, '=', 0, ['"', '\''], symbol, 0, ['"', '\''], junk
 
-def assign_value():         return junk, keyword('value'), 0, '=', 0, ['"', '\''], expression, 0, ['"', '\''], junk
+def assign_value():         return junk, keyword('value'), 0, '=', static_call, junk
 
-def assign_statement():     return '{', keyword('assign'), assign_var, assign_value
+def assign_statement():     return '{', keyword('assign'), assign_var, assign_value, '}'
 
 """
 Finally, the actual language description.
