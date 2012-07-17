@@ -66,6 +66,7 @@ class TreeWalker(object):
     """
     def __walk_tree(self, handlers, ast, code):
         for k, v in ast:
+            print k, v
             if handlers.has_key(k):
                 if k == 'right_paren':
                     code = "%s)" % (code)
@@ -105,28 +106,61 @@ class TreeWalker(object):
     def translate(self, ast, code):
         return code 
 
-    def assign(self, ast, code):
+    def assign_var(self, ast, code):
+        for k, v in ast:
+            if k == 'symbol':
+                code = "$%s = " % v[0]
+
         return code
+
+    def assign_value(self, ast, code):
+        for k, v in ast:
+            print k, v
+            if k == 'static_call':
+                for text in v:
+                    if text[0] == 'static_param':
+                        static_call = text[1].split(', ')
+                        if len(static_call) >= 2:
+                            static_class = static_call[0].replace('\'', '')
+                            static_fun = static_call[1].replace('\'', '')
+                            code = "%s%s::%s(" % (code, static_class, static_fun)
+                            if len(static_call) > 2:
+                                static_params = static_call[2:]
+                                code = "%s%s)" % (code, ", ".join(static_params))
+                            else:
+                                code = "%s)" % (code)
+                        else: 
+                            print "STATIC CALL ERROR!"
+
+        return code
+
+    def assign(self, ast, code):
+        handlers = { 
+            'assign_value': self.assign_value, 
+            'assign_var': self.assign_var 
+        }
+
+        return "%s<? %s; ?>" % (code, self.__walk_tree(handlers, ast, code))
         
+    """
+    A literal block in smarty, we can just drop the {literal} tags because 
+    php is less ambiguous.
+    """
     def literal(self, ast, code):
-        """
-        A literal block in smarty, we can just drop the {literal} tags because 
-        php is less ambiguous.
-        """
         literal_string = ast
         literal_string = literal_string.replace('{/literal}', '')
         literal_string = literal_string.replace('{literal}', '')
         
         return "%s%s" % (code, literal_string)
         
+    """
+    A complex string containing variables, e.x.,
+    
+        "`$foo.bar` Hello World $bar"
+    """
     def variable_string(self, ast, code):
-        """
-        A complex string containing variables, e.x.,
         
-            "`$foo.bar` Hello World $bar"
-        
-        """
-        
+        print code
         code = "%s\"" % code
         
         # Crawl through the ast snippet and create a
@@ -165,7 +199,7 @@ class TreeWalker(object):
         i = 0
         size = len(variables)
         for v in variables:
-            function_params_string = "%s$%s" % (
+            function_params_string = "%s%s" % (
                 function_params_string,
                 v
             )
@@ -177,8 +211,6 @@ class TreeWalker(object):
         # The final string outputted is in the format:
         #   
         #   "%s text %s"|format(foo, bar)
-        #
-        # format is a php modifier similar to sprintf.
         if len(function_params_string):
             code = "%s%s\"|format(%s)" % (
                 code,
@@ -240,9 +272,9 @@ class TreeWalker(object):
             
             i += 1
             if not i == size:
-                function_params_string = "$%s, " % function_params_string
+                function_params_string = "%s, " % function_params_string
                 
-        function_params_string = "$%s]" % function_params_string
+        function_params_string = "%s]" % function_params_string
         
         code = "%s<?= %s(%s) ?>" % (
             code,
@@ -276,7 +308,7 @@ class TreeWalker(object):
                 self.keywords[expression]
             )
         
-        code = "%s<?= $%s ?>" % (
+        code = "%s<?= %s ?>" % (
             code,
             expression
         )
@@ -315,7 +347,7 @@ class TreeWalker(object):
         }
 
         if ast[0][1] == u'default': 
-            return "isset(%s)", code
+            return "isset(%s)" % code
 
         code = "%s|" % code
                 
@@ -337,31 +369,26 @@ class TreeWalker(object):
         
         return code
         
+    """
+    Raw content, e.g.,
+    
+    <html>
+        <body>
+            <b>Hey</b>
+        </body>
+    </html>
+    """
     def content(self, ast, code):
-        """
-        Raw content, e.g.,
+        return "%s%s" % (code, ast)
         
-        <html>
-            <body>
-                <b>Hey</b>
-            </body>
-        </html>
-        """
-        code = "%s%s" % (
-            code,
-            ast
-        )
-        
-        return code
-        
+    """
+    A foreach statement in smarty:
+    
+    {foreach from=expression item=foo}
+    {foreachelse}
+    {/foreach}
+    """ 
     def for_statement(self, ast, code):
-        """
-        A foreach statement in smarty:
-        
-        {foreach from=expression item=foo}
-        {foreachelse}
-        {/foreach}
-        """ 
 
         code = "%s<? foreach " % (
             code

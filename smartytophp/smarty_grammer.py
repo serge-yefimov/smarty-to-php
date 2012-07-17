@@ -66,7 +66,7 @@ def array():                return symbol, "[", 0, expression, "]"
 
 def modifier():             return [object_dereference, array, symbol, variable_string, string], -2, modifier_right, 0, ' '
 
-def expression():           return [modifier, object_dereference, array, symbol, string, variable_string, static_call]
+def expression():           return [modifier, object_dereference, array, symbol, string, variable_string, php_fun]
 
 def object_dereference():   return [array, symbol], '.', expression
 
@@ -74,7 +74,11 @@ def exp_no_modifier():      return [object_dereference, array, symbol, variable_
 
 def modifier_right():       return ('|', symbol, -1, (':', exp_no_modifier),)
 
-def static_call():          return re.compile(r'\$static->call\([\'A-Za-z\'\-, ]+\)')
+def static_param():         return re.compile(r'[\'A-Za-z\-,\' ]+')
+
+def static_call():          return re.compile(r'\$static->call\('), static_param ,re.compile(r'\)')
+
+def php_fun():              return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
 
 """
 Smarty statements.
@@ -105,7 +109,7 @@ def for_statement():        return '{', keyword('foreach'), -1, [for_from, for_i
 
 def assign_var():           return junk, keyword('var'), 0, '=', 0, ['"', '\''], symbol, 0, ['"', '\''], junk
 
-def assign_value():         return junk, keyword('value'), 0, '=', static_call, junk
+def assign_value():         return junk, keyword('value'), 0, '=', 0, ['"', '\''], [static_call, php_fun, expression, object_dereference], 0, ['"', '\''], junk
 
 def assign_statement():     return '{', keyword('assign'), assign_var, assign_value, '}'
 
@@ -114,8 +118,10 @@ Finally, the actual language description.
 """
 def smarty_language():      return -2, [literal, if_statement, for_statement, function_statement, comment, print_statement, assign_statement, content]
 
-#print_trace = True
+"""
+print_trace = True
 
-#files = fileinput.input()
-#result = parse(smarty_language(), files, True, comment)
-#print result
+files = fileinput.input()
+result = parse(smarty_language(), files, True, comment)
+print result
+"""
