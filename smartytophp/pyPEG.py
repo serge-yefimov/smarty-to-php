@@ -346,6 +346,10 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         lineNo += 1
         nn -= 1
         lineCont = orig.splitlines()[nn]
-        raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
+
+        f = open('convert_log', 'a')
+        f.write(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
+        f.close()
+        #raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
 
     return result
