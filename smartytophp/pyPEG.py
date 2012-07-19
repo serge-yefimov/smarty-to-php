@@ -318,7 +318,6 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         orig += u(line)
 
     textlen = len(orig)
-
     try:
         p = parser(p=packrat)
         p.textlen = len(orig)
@@ -350,6 +349,6 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         f = open('convert_log', 'a')
         f.write(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
         f.close()
-        #raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
+        raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
 
     return result
