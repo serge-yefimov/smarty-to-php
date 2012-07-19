@@ -1,6 +1,6 @@
 {$foo+1}
 
-{$foo*$bar}
+{$foo*$bar-$green}
 
 {* some more complicated examples *}
 

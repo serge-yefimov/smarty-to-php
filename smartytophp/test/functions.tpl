@@ -1,5 +1,5 @@
 {* Functions *}
-{config_load file="colors.conf"}
+{*{config_load file="colors.conf"}*}
 
 {include file="header.tpl"}
 {insert file="banner_ads.tpl" title="My Site"}
@@ -40,18 +40,6 @@
   </select>
 
 {* Syntax Quotes *}
-
-{func var="test $foo test"}              // sees $foo
-{func var="test $foo_bar test"}          // sees $foo_bar
-{func var="test `$foo[0]` test"}         // sees $foo[0]
-{func var="test `$foo[bar]` test"}       // sees $foo[bar]
-{func var="test $foo.bar test"}          // sees $foo (not $foo.bar)
-{func var="test `$foo.bar` test"}        // sees $foo.bar
-{func var="test `$foo.bar` test"|escape} // modifiers outside quotes!
-{func var="test {$foo|escape} test"}     // modifiers inside quotes!
-{func var="test {time()} test"}          // PHP function result
-{func var="test {counter} test"}         // plugin result
-{func var="variable foo is {if !$foo}not {/if} defined"} // Smarty block function
 
 {** Examples **}
 {* will replace $tpl_name with value *}

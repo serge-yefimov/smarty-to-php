@@ -5,6 +5,7 @@
 import re
 import sys, codecs
 import exceptions
+from time import localtime, strftime
 
 class keyword(unicode): pass
 class code(unicode): pass
@@ -345,10 +346,12 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         lineNo += 1
         nn -= 1
         lineCont = orig.splitlines()[nn]
+        time = strftime("%a, %d %b %Y %H:%M:%S +0000", localtime())
 
         f = open('convert_log', 'a')
-        f.write(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
+        f.write("("+time+") " + u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
         f.close()
-        raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
+        print "Error in " + u(file) + " on statement " + lineCont
+        #raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
 
     return result

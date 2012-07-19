@@ -50,6 +50,10 @@ class TreeWalker(object):
     """
     def __init__(self, ast, extension="", path=""):
         self.language_handler = { 'smarty_language': self.smarty_language }
+        self.include_handler = { 
+            'symbol': self.symbol,
+            'expression': self.expression
+        }
         self.symbol_handler = { 'symbol': self.symbol }
         self.expression_handler = { 'expression': self.expression }
         self.operator_handler = {
@@ -109,17 +113,22 @@ class TreeWalker(object):
     """
     def smarty_language(self, ast, code):
         handler = {
+            'include_statement': self.include_statement,
+            'function_statement': self.function_statement,
             'if_statement': self.if_statement,
             'content': self.content,
             'print_statement': self.print_statement,
             'for_statement': self.for_statement,
             'literal': self.literal,
             'assign_statement': self.assign,
+            'math_statement': self.math_statement,
             'translate': self.translate
         }
-        print ast
         
         return self.__walk_tree(handler, ast, code)
+
+    def math_statement(self, ast, code):
+        return code
 
     def translate(self, ast, code):
         return code 
@@ -192,21 +201,13 @@ class TreeWalker(object):
             # Plain-text.
             if k == 'text':
                 for text in v:
-                    string_contents = "%s%s" % (
-                        string_contents,
-                        text
-                    )
+                    string_contents = "%s%s" % (string_contents, text)
                 
             else: # An expression.
-                string_contents = "%s%s" % (
-                    string_contents,
-                    '%s'
-                )
+                string_contents = "%s%s" % (string_contents, '%s')
                 
                 expression = self.__walk_tree (
-                    {
-                        'expression': self.expression,
-                    },
+                    self.expression_handler,
                     [('expression', v)],
                     ""
                 )
@@ -217,10 +218,7 @@ class TreeWalker(object):
         i = 0
         size = len(variables)
         for v in variables:
-            function_params_string = "%s%s" % (
-                function_params_string,
-                v
-            )
+            function_params_string = "%s%s" % (function_params_string, v)
             
             i += 1
             if not i == size:
@@ -228,20 +226,23 @@ class TreeWalker(object):
     
         return code
 
+    #def include_params(self, ast, code):
+        
+    # Deal with the special case of an include function in
+    # smarty this should be mapped onto php's include tag.
     def include_statement(self, ast, code):
-        # Deal with the special case of an include function in
-        # smarty this should be mapped onto php's include tag.
-        if function_name == 'include' and function_params.has_key('file'):
-            tokens = function_params['file'].split('/')
+        params = {}
+        for k, v in ast:
+            if k == 'include_params':
+                symbol = self.__walk_tree(self.symbol_handler, v, "")
+                expression = self.__walk_tree(self.expression_handler, v, "")
+                params[symbol] = expression
 
-            file_name = tokens[len(tokens) - 1]
-            file_name = "%s/%s.%s" % (
-                self.php_path,
-                re.sub(r'\..*$', '', file_name),
-                self.php_extension
-            )
+        for k, v in params.items():
+            if k == 'file':
+                return "%s <?= $this->fetch(%s); ?>" % (code, v)
 
-            return "%s<? $this->fetch(\"%s\"); ?>" % (code, file_name)
+        return code
     
     """
     Smarty functions are mapped to a modifier in
@@ -626,7 +627,7 @@ class TreeWalker(object):
         # Is there a ! operator.
         if len(ast[0]) > 0:
             if ast[0][0] == 'not_operator':
-                code = "!%s" % code
+                code = "!$%s" % code
             elif ast[0][0] == 'dollar':
                 code = "$%s" % code
             elif ast[0][0] == 'at_operator':

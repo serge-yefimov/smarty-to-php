@@ -20,6 +20,8 @@ def junk():                     return -1, [' ', '\n', '\t']
 
 def quotes():                   return 0, ['"', '\'']
 
+def equals():                   return '='
+
 """
 Logical operators.
 """
@@ -78,7 +80,7 @@ def object_dereference():       return [array, symbol], '.', expression
 
 def exp_no_modifier():          return [object_dereference, boolean, array, symbol, variable_string, string]
 
-def default():                  return 'default:', [variable_string, boolean]
+def default():                  return keyword('default'), ':', [variable_string, boolean]
 
 def modifier_right():           return ('|', [default, symbol], -1, (':', exp_no_modifier),)
 
@@ -93,40 +95,51 @@ Smarty statements.
 """
 def else_statement():           return '{', keyword('else'), '}', -1, smarty_language
 
-def for_from():                 return junk, keyword('from'), '=', quotes, expression, quotes, junk
+def for_from():                 return junk, keyword('from'), equals, quotes, expression, quotes, junk
 
-def for_item():                 return junk, keyword('item'), '=', quotes, symbol, quotes, junk
+def for_item():                 return junk, keyword('item'), equals, quotes, symbol, quotes, junk
 
-def for_name():                 return junk, keyword('name'), '=', quotes, symbol, quotes, junk
+def for_name():                 return junk, keyword('name'), equals, quotes, symbol, quotes, junk
 
-def for_key():                  return junk, keyword('key'), '=', quotes, symbol, quotes, junk
+def for_key():                  return junk, keyword('key'), equals, quotes, symbol, quotes, junk
 
 def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_item, for_name, for_key], '}', -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
 
 def foreachelse_statement():    return '{', keyword('foreachelse'), '}', -1, smarty_language
 
-def print_statement():          return '{', 0, 'e ', expression, '}'
+def print_statement():          return '{', 0, 'e ', -2, expression, '}'
 
 def elseif_statement():         return '{', keyword('elseif'), -1, left_paren, expression, -1, right_paren, -1, (operator, -1, left_paren, expression, -1, right_paren), '}', -1, smarty_language
 
 def if_statement():             return '{', keyword('if'), -1, left_paren, expression, -1, right_paren, -1, (operator, -1, left_paren, expression, -1, right_paren), '}', -1, smarty_language, -1, [else_statement, elseif_statement], '{/', keyword('if'), '}'
 
-def assign_var():               return junk, keyword('var'), 0, '=', quotes, symbol, quotes, junk
+def assign_var():               return junk, keyword('var'), 0, equals, quotes, symbol, quotes, junk
 
-def assign_value():             return junk, keyword('value'), 0, '=', quotes, [expression, static_call, php_fun], quotes, junk
+def assign_value():             return junk, keyword('value'), 0, equals, quotes, [static_call, php_fun], quotes, junk
 
 def assign_statement():         return '{', keyword('assign'), assign_var, assign_value, '}'
 
-def capture_name():             return junk, keyword('name'), '=', quotes, symbol, quotes, junk
+def capture_name():             return junk, keyword('name'), equals, quotes, symbol, quotes, junk
 
-def capture_assign():           return junk, keyword('assign'), '=', quotes, symbol, quotes, junk
+def capture_assign():           return junk, keyword('assign'), equals, quotes, symbol, quotes, junk
 
 def capture_statement():        return '{', keyword('capture'), -1, [capture_name, capture_assign], '}', -1, smarty_language, '{/', keyword('capture'), '}'
+
+def include_params():           return junk, 0, symbol, 0, equals, expression, junk
+
+def include_statement():        return '{', keyword('include'), -2, include_params, '}'
+
+def math_operators():           return ['*', '+', '/', '-', '%']
+
+def math_expression():          return junk, expression, 0, math_operators, junk
+
+def math_statement():           return '{', -2, math_expression, '}'
+
 
 """
 Finally, the actual language description.
 """
-def smarty_language():      return -2, [literal, if_statement, for_statement, comment, print_statement, assign_statement, content]
+def smarty_language():      return -2, [literal, if_statement, for_statement, math_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
 
 """
 print_trace = True
