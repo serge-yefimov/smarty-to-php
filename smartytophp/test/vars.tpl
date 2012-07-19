@@ -15,4 +15,6 @@ This weeks meeting is in {$meetingPlace}.
 {$Contacts.phone.home}<br />
 {$Contacts.phone.cell}<br />
 
+{$Contacts.phone.cell.iphone|default:false}<br />
+{$Contacts.phone.cell.iphone|escape:'html'}<br />
 

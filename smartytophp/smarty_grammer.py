@@ -74,17 +74,19 @@ def array():                    return symbol, "[", 0, expression, "]"
 
 def modifier():                 return [object_dereference, array, symbol, variable_string, string], -2, modifier_right, 0, ' '
 
+def modifier_right():           return ('|', [default, escape, symbol], -1, (':', exp_no_modifier),)
+
 def expression():               return [modifier, object_dereference, array, symbol, string, variable_string, php_fun]
 
-def object_dereference():       return [array, symbol], '.', expression
+def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
+
+def object_dereference():       return [array, symbol], -2, dereference
 
 def exp_no_modifier():          return [object_dereference, boolean, array, symbol, variable_string, string]
 
 def default():                  return keyword('default'), ':', [variable_string, boolean]
 
 def escape():                   return keyword('escape'), ':', [expression]
-
-def modifier_right():           return ('|', [default, escape, symbol], -1, (':', exp_no_modifier),)
 
 def static_param():             return re.compile(r'[\'A-Za-z\-,\' ]+')
 

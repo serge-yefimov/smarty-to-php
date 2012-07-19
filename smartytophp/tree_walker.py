@@ -24,6 +24,7 @@ THE SOFTWARE.
 """
 
 import re
+import pprint
 
 """
 Takes an AST of a parsed smarty program
@@ -117,6 +118,7 @@ class TreeWalker(object):
             'function_statement': self.function_statement,
             'if_statement': self.if_statement,
             'content': self.content,
+            'comment': self.function_statement,
             'print_statement': self.print_statement,
             'for_statement': self.for_statement,
             'literal': self.literal,
@@ -330,11 +332,11 @@ class TreeWalker(object):
             'array': self.array,
             'string': self.string,
             'variable_string': self.variable_string,
+            'object_dereference': self.object_dereference,
             'modifier_right': self.modifier_right
         }
                 
-        # Walking the expression that starts a
-        # modifier statement.
+        # Walking the expression that starts a modifier statement.
         return self.__walk_tree(modifier_handler, ast, code)
         
     """
@@ -546,6 +548,8 @@ class TreeWalker(object):
             ""
         )
         
+        #print "expression:",expression
+        
         # Should we perform any replacements?
         for k, v in self.replacements.items():
             if re.match(k, expression):
@@ -565,17 +569,24 @@ class TreeWalker(object):
             'symbol': self.symbol,
             'string': self.string,
             'variable_string': self.variable_string,
+            'dereference': self.dereference,
             'array': self.array
         }
-        
-        code = handlers[ast[0][0]](ast[0][1], code)
-        
-        code = "%s[\'%s\']" % (
-            code, 
-            handlers[ast[1][0]](ast[1][1], "")
-        )
-        
+
+        for k, v in ast:
+           code = "%s%s" % (code, handlers[k](v, ""))
+
         return code
+
+    def dereference(self, ast, code):
+        object_handlers = {
+            'expression': self.expression,
+            'symbol': self.symbol,
+            'string': self.string,
+            'variable_string': self.variable_string,
+            'array': self.array
+        }
+        return "[\'%s\']" % self.__walk_tree(object_handlers, ast, "")
         
     """
     An array expression in Smarty:
