@@ -227,23 +227,38 @@ class TreeWalker(object):
         return code
 
     #def include_params(self, ast, code):
+    def rreplace(self, s, old, new, occurrence):
+        li = s.rsplit(old, occurrence)
+        return new.join(li)
         
     # Deal with the special case of an include function in
     # smarty this should be mapped onto php's include tag.
     def include_statement(self, ast, code):
         params = {}
+        args = filename = ''
         for k, v in ast:
             if k == 'include_params':
                 symbol = self.__walk_tree(self.symbol_handler, v, "")
                 expression = self.__walk_tree(self.expression_handler, v, "")
                 params[symbol] = expression
 
+        if len(params) > 1 and 'file' in params:
+            args = ", array("
+
         for k, v in params.items():
             if k == 'file':
-                return "%s <?= $this->fetch(%s); ?>" % (code, v)
+                filename = v
+            # create additional args array
+            else:
+                args += '%s=>%s, ' % (k, v)
+                
+        # if there are args, remove the trailing `,` from the array
+        if not args == '':
+            args = "%s)" % self.rreplace(args, ',', '', 1)
 
-        return code
-    
+        print args
+        return "%s <?= $this->fetch(%s%s); ?>" % (code, filename, args)
+
     """
     Smarty functions are mapped to a modifier in
     php with a hash as input.
