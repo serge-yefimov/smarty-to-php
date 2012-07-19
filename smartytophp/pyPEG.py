@@ -352,6 +352,6 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         f.write("("+time+") " + u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
         f.close()
         print "Error in " + u(file) + " on statement " + lineCont
-        #raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
+        raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
 
     return result

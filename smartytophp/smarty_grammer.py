@@ -82,7 +82,9 @@ def exp_no_modifier():          return [object_dereference, boolean, array, symb
 
 def default():                  return keyword('default'), ':', [variable_string, boolean]
 
-def modifier_right():           return ('|', [default, symbol], -1, (':', exp_no_modifier),)
+def escape():                   return keyword('escape'), ':', [expression]
+
+def modifier_right():           return ('|', [default, escape, symbol], -1, (':', exp_no_modifier),)
 
 def static_param():             return re.compile(r'[\'A-Za-z\-,\' ]+')
 
@@ -129,17 +131,25 @@ def include_params():           return junk, 0, symbol, 0, equals, expression, j
 
 def include_statement():        return '{', keyword('include'), -2, include_params, '}'
 
+"""
 def math_operators():           return ['*', '+', '/', '-', '%']
 
 def math_expression():          return junk, expression, 0, math_operators, junk
 
 def math_statement():           return '{', -2, math_expression, '}'
+"""
 
+"""
+iFixit specific statements
+"""
+def uri_params():               return junk, 0, symbol, 0, equals, expression, junk
+
+def guri_statement():           return '{', keyword('GURI'), symbol, equals, expression, -2, uri_params, '}'
 
 """
 Finally, the actual language description.
 """
-def smarty_language():      return -2, [literal, if_statement, for_statement, math_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
+def smarty_language():      return -2, [literal, if_statement, for_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
 
 """
 print_trace = True

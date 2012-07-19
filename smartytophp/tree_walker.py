@@ -121,7 +121,7 @@ class TreeWalker(object):
             'for_statement': self.for_statement,
             'literal': self.literal,
             'assign_statement': self.assign,
-            'math_statement': self.math_statement,
+            #'math_statement': self.math_statement,
             'translate': self.translate
         }
         
@@ -256,7 +256,6 @@ class TreeWalker(object):
         if not args == '':
             args = "%s)" % self.rreplace(args, ',', '', 1)
 
-        print args
         return "%s <?= $this->fetch(%s%s); ?>" % (code, filename, args)
 
     """
@@ -349,10 +348,20 @@ class TreeWalker(object):
             'symbol': self.symbol,
             'default': self.default,
             'string': self.string,
+            'escape': self.escape,
             'variable_string': self.variable_string
         }
 
         return self.__walk_tree(handler, ast, code)
+
+    def escape(self, ast, code):
+        escape_type = self.__walk_tree(self.expression_handler, ast, "")
+        if escape_type:
+           code = "%s, %s" % (code, escape_type)
+        else:
+           code = "%s" % code
+
+        return "escape(%s);" % code
         
     """
     Raw content, e.g.,
@@ -378,15 +387,14 @@ class TreeWalker(object):
         name = _from = _key = _item = _name = ''
         
         for k, v in ast:
-            print k
             if k == 'for_from':
-                _from = "%s as" % self.__walk_tree (self.expression_handler, v, code)
+                _from = "%s as" % self.__walk_tree (self.expression_handler, v, "")
             elif k == 'for_key':
-                _key = "$%s =>" % self.__walk_tree (self.symbol_handler, v, code)
+                _key = "$%s =>" % self.__walk_tree (self.symbol_handler, v, "")
             elif k == 'for_item':
-                _item = "$%s" % self.__walk_tree (self.symbol_handler, v, code)
+                _item = "$%s" % self.__walk_tree (self.symbol_handler, v, "")
             elif k == 'for_name':
-                _name = "$%s = '';" % self.__walk_tree (self.symbol_handler, v, code)
+                _name = "$%s = '';" % self.__walk_tree (self.symbol_handler, v, "")
         
         # TODO: figure out what to do with name and iteration
         code = "%s<? foreach (%s %s %s): ?> " % (code, _from, _key, _item)
@@ -612,7 +620,6 @@ class TreeWalker(object):
     def default(self, ast, code):
         prefix = ''
         for k, v in ast:
-            print k
             bool_val = v[0][0]
             if k == 'boolean' and  bool_val == 'true':
                 prefix = '!' 
@@ -625,7 +632,6 @@ class TreeWalker(object):
     false
     """
     def boolean(self, ast, code):
-        print "boolean:",ast
         return code
 
     """
