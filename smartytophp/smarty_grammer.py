@@ -86,7 +86,7 @@ def exp_no_modifier():          return [object_dereference, boolean, array, symb
 
 def default():                  return keyword('default'), ':', [variable_string, boolean]
 
-def escape():                   return keyword('escape'), ':', [expression]
+def escape():                   return keyword('escape'), 0, ':', 0, [expression]
 
 def static_param():             return re.compile(r'[\'A-Za-z\-,\' ]+')
 
