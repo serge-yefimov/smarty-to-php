@@ -1,28 +1,3 @@
-"""
-The MIT License
-
-Copyright (c) 2010 FreshBooks
-Modified by iFixit, 2012
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
-
 import re
 import pprint
 
@@ -123,6 +98,9 @@ class TreeWalker(object):
             'for_statement': self.for_statement,
             'literal': self.literal,
             'assign_statement': self.assign,
+            'guri_statement': self.guri,
+            'uri_statement': self.uri,
+            'buri_statement': self.buri,
             #'math_statement': self.math_statement,
             'translate': self.translate
         }
@@ -364,6 +342,34 @@ class TreeWalker(object):
            code = "%s" % code
 
         return "escape(%s);" % code
+
+    def uri_param(self, ast, code):
+        self.__walk_tree(self.symbol_handler, v, "")
+        for k, v in ast:
+            print self.__walk_tree(self.expression_handler, v, "")
+            
+        return code
+
+    def guri(self, ast, code):
+        return self.uri(ast, code, "guri")
+
+    def uri(self, ast, code, base_class):
+        method_name = args = ''
+
+        code = "%s <?= %s(array(" % (code, base_class)
+        for k, v in ast:
+            #_method(ast, code)
+            key = self.__walk_tree(self.symbol_handler, v, "")
+            value = self.__walk_tree(self.expression_handler, v, "")
+            code = "%s'%s'=>%s, " % (code, key, value)
+
+        return "%s)); ?>" % self.rreplace(code, ',', '', 1)
+
+    def buri(self, ast, code):
+        return self.uri(ast, code, "buri")
+
+    def curi(self, ast, code):
+        return self.uri(ast, code, "curi")
         
     """
     Raw content, e.g.,

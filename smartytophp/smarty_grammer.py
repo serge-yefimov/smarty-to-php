@@ -144,14 +144,20 @@ def math_statement():           return '{', -2, math_expression, '}'
 """
 iFixit specific statements
 """
-def uri_params():               return junk, 0, symbol, 0, equals, expression, junk
+def uri_param():                return junk, symbol, equals, expression, junk
 
-def guri_statement():           return '{', keyword('GURI'), symbol, equals, expression, -2, uri_params, '}'
+def guri_statement():           return '{', keyword('GURI'), -2, uri_param, '}'
+
+def uri_statement():            return '{', keyword('URI'), -2, uri_param, '}'
+
+def buri_statement():           return '{', keyword('BURI'), -2, uri_param, '}'
+
+def curi_statement():           return '{', keyword('CURI'), -2, uri_param, '}'
 
 """
 Finally, the actual language description.
 """
-def smarty_language():      return -2, [literal, if_statement, for_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
+def smarty_language():          return -2, [literal, if_statement, for_statement, curi_statement, buri_statement, uri_statement, guri_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
 
 """
 print_trace = True
