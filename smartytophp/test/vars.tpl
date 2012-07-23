@@ -14,6 +14,7 @@ This weeks meeting is in {$meetingPlace}.
 {* you can print arrays of arrays as well *}
 {$Contacts.phone.home}<br />
 {$Contacts.phone.cell}<br />
+{$Contacts.phone->cell()}
 
 {$Contacts.phone.cell.iphone|default:false}<br />
 {$Contacts.phone.cell.iphone|escape:'html'}<br />

@@ -82,10 +82,11 @@ def main():
             for subdirname in dirnames:
                 print os.path.join(dirname, subdirname)
             for filename in filenames:
-                if filename.endswith('.tpl'):
+                if filename.endswith('.tpl') and os.path.exists(filename):
                     output_filename = filename.rstrip('.tpl')+output_file_type
+                    #print filename, output_filename
                     convert(filename, output_filename)
-                    print os.path.join(dirname, filename)
+                    #print os.path.join(dirname, filename)
 
 def convert(input_file, output_file):
     # Parse the file into tokens
@@ -104,4 +105,4 @@ def convert(input_file, output_file):
     print 'Template outputted to %s' % output_file
 
 if __name__ == "__main__":
-   main()
+    main()

@@ -16,7 +16,7 @@ def comment():                  return re.compile("{\*.*?\*}", re.S)
 
 def literal():                  return re.compile("{literal}.*?{/literal}", re.S)
 
-def junk():                     return -1, [' ', '\n', '\t']
+def junk():                     return -1, re.compile(r'\s')
 
 def quotes():                   return 0, ['"', '\'']
 
@@ -50,11 +50,12 @@ def operator():                 return 0, ' ', [and_operator, equals_operator, g
 """
 Smarty variables.
 """
-def string():                   return 0, ' ', [(re.compile(r'"'), -1, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')], re.compile(r'"')), (re.compile(r'\''), -1, [re.compile(r'[^\'\\]'), re.compile(r'\\.')], re.compile(r'\''))]
-
 def text():                     return -2, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')]
 
+def string():                   return 0, ' ', [(re.compile(r'"'), -1, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')], re.compile(r'"')), (re.compile(r'\''), -1, [re.compile(r'[^\'\\]'), re.compile(r'\\.')], re.compile(r'\''))]
+
 def variable_string():          return '"', -2, [text, ('`', expression, '`'), ('$', expression)], '"'
+#def variable_string():          return -2, [re.compile(r'([\"\"\'])(?:(?=(\\?))\2.)*?\1'), re.compile(r'[A-Za-z0-9\/\.\'\"_-]+')]
 
 def false():                    return 'false'
 
@@ -64,11 +65,13 @@ def boolean():                  return [false, true]
 
 def dollar():                   return '$'
 
+def assign():                   return re.compile(r'[->]+')
+
 def not_operator():             return '!'
 
 def at_operator():              return '@'
 
-def symbol():                   return -1, [' ', '\n', '\t'], 0, [not_operator, at_operator], 0, dollar, re.compile(r'[\w\-\+]+')
+def symbol():                   return -1, [' ', '\n', '\t'], 0, [not_operator, at_operator], 0, dollar, re.compile(r'[\w\-\+\_]+(?<!-)')
 
 def array():                    return symbol, "[", 0, expression, "]"
 
@@ -76,11 +79,20 @@ def modifier():                 return [object_dereference, array, symbol, varia
 
 def modifier_right():           return ('|', [default, escape, symbol], -1, (':', exp_no_modifier),)
 
-def expression():               return [modifier, object_dereference, array, symbol, string, variable_string, php_fun]
+def static_param():             return re.compile(r'[\'A-Za-z\-,\'\/\:\. ]+')
+
+def static_call():              return re.compile(r'\$static\->\call\('), static_param, -1, (',', static_param), ')'
+#def static_call():              return dollar, keyword('static->call'), left_paren, -2, static_param, right_paren
+
+def php_fun():                  return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
+
+def expression():               return [modifier, object_dereference, function_statement, array, symbol, string, variable_string]
 
 def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
 
-def object_dereference():       return [array, symbol], -2, dereference
+def assignment_op():            return assign, re.compile(r".*?\(.*?\)")
+
+def object_dereference():       return [array, symbol], -2, [dereference, assignment_op]
 
 def exp_no_modifier():          return [object_dereference, boolean, array, symbol, variable_string, string]
 
@@ -88,15 +100,15 @@ def default():                  return keyword('default'), ':', [variable_string
 
 def escape():                   return keyword('escape'), 0, ':', 0, [expression]
 
-def static_param():             return re.compile(r'[\'A-Za-z\-,\' ]+')
-
-def static_call():              return re.compile(r'\$static->call\('), static_param ,re.compile(r'\)')
-
-def php_fun():                  return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
-
 """
 Smarty statements.
 """
+def parameter():                return junk, 0, operator, 0, left_paren, expression, 0, right_paren, -1, (operator, 0, left_paren, expression, 0, right_paren), junk
+
+def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, -1, [else_statement, elseif_statement], '{/', keyword('if'), '}'
+
+def elseif_statement():         return '{', keyword('elseif'), -2, parameter, '}', -1, smarty_language
+
 def else_statement():           return '{', keyword('else'), '}', -1, smarty_language
 
 def for_from():                 return junk, keyword('from'), equals, quotes, expression, quotes, junk
@@ -113,13 +125,9 @@ def foreachelse_statement():    return '{', keyword('foreachelse'), '}', -1, sma
 
 def print_statement():          return '{', 0, 'e ', -2, expression, '}'
 
-def elseif_statement():         return '{', keyword('elseif'), -1, left_paren, expression, -1, right_paren, -1, (operator, -1, left_paren, expression, -1, right_paren), '}', -1, smarty_language
-
-def if_statement():             return '{', keyword('if'), -1, left_paren, expression, -1, right_paren, -1, (operator, -1, left_paren, expression, -1, right_paren), '}', -1, smarty_language, -1, [else_statement, elseif_statement], '{/', keyword('if'), '}'
-
 def assign_var():               return junk, keyword('var'), 0, equals, quotes, symbol, quotes, junk
 
-def assign_value():             return junk, keyword('value'), 0, equals, quotes, [static_call, php_fun], quotes, junk
+def assign_value():             return junk, keyword('value'), 0, equals, [static_call, php_fun, expression], quotes
 
 def assign_statement():         return '{', keyword('assign'), assign_var, assign_value, '}'
 
@@ -133,13 +141,7 @@ def include_params():           return junk, 0, symbol, 0, equals, expression, j
 
 def include_statement():        return '{', keyword('include'), -2, include_params, '}'
 
-"""
-def math_operators():           return ['*', '+', '/', '-', '%']
-
-def math_expression():          return junk, expression, 0, math_operators, junk
-
-def math_statement():           return '{', -2, math_expression, '}'
-"""
+def function_statement():       return junk, 0, operator, symbol, left_paren, expression, right_paren, junk
 
 """
 iFixit specific statements
@@ -154,10 +156,12 @@ def buri_statement():           return '{', keyword('BURI'), -2, uri_param, '}'
 
 def curi_statement():           return '{', keyword('CURI'), -2, uri_param, '}'
 
+def translate():                return '{', keyword('t'), '}', -2, smarty_language, '{/', keyword('t'), '}'
+
 """
 Finally, the actual language description.
 """
-def smarty_language():          return -2, [literal, if_statement, for_statement, curi_statement, buri_statement, uri_statement, guri_statement, comment, include_statement, capture_statement, print_statement, assign_statement, content]
+def smarty_language():          return -2, [literal, if_statement, for_statement, curi_statement, buri_statement, uri_statement, guri_statement, assign_statement, translate, comment, include_statement, capture_statement, print_statement, content]
 
 """
 print_trace = True

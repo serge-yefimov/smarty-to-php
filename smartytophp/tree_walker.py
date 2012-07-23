@@ -42,9 +42,11 @@ class TreeWalker(object):
             'ne_operator': self.ne_operator,
             'or_operator': self.or_operator
         }
+
         self.param_handler = {
             'expression': self.expression,
             'operator': self.operator,
+            'parameter': self.parameter,
             'right_paren': None,
             'left_paren': None
         }
@@ -101,7 +103,6 @@ class TreeWalker(object):
             'guri_statement': self.guri,
             'uri_statement': self.uri,
             'buri_statement': self.buri,
-            #'math_statement': self.math_statement,
             'translate': self.translate
         }
         
@@ -109,9 +110,6 @@ class TreeWalker(object):
 
     def math_statement(self, ast, code):
         return code
-
-    def translate(self, ast, code):
-        return code 
 
     def assign_var(self, ast, code):
         for k, v in ast:
@@ -121,6 +119,7 @@ class TreeWalker(object):
         return code
 
     def assign_value(self, ast, code):
+        expression = ''
         for k, v in ast:
             if k == 'static_call':
                 for text in v:
@@ -139,8 +138,13 @@ class TreeWalker(object):
                             print "STATIC CALL ERROR!"
             elif k == 'php_fun':
                 code = '%s%s' % (code, v[0])
+            else:
+                expression = '%s' % self.__walk_tree(self.expression_handler, ast, "")
 
-        return code
+        if expression:
+            return "%s%s" % (code, expression)
+        else:
+            return code
 
     def assign(self, ast, code):
         handlers = { 
@@ -246,39 +250,9 @@ class TreeWalker(object):
         # The variable that starts a function statement.
 
         function_name = self.__walk_tree (self.symbol_handler, ast, "")
+        expression = self.__walk_tree(self.expression_handler, ast, "")
         
-        # Cycle through the function_parameters and store them
-        # these will be passed into the modifier as a dictionary.
-        function_params = {}
-        for k, v in ast[1:]:
-            symbol = self.__walk_tree(self.symbol_handler, v, "")
-            expression = self.__walk_tree(self.expression_handler, v, "")
-            
-            function_params[symbol] = expression
-        
-            
-        # Now create a dictionary string from the paramters.
-        function_params_string = '['
-        i = 0
-        size = len(function_params.items())
-        for k, v in function_params.items():
-            function_params_string = "%s'%s': %s" % (
-                function_params_string,
-                k,
-                v
-            )
-            
-            i += 1
-            if not i == size:
-                function_params_string = "%s, " % function_params_string
-                
-        function_params_string = "%s]" % function_params_string
-        
-        code = "%s<?= %s(%s) ?>" % (
-            code,
-            function_name,
-            function_params_string
-        )
+        code = "%s<?= %s(%s) ?>" % ( code, function_name, expression)
         return code
         
     """
@@ -350,9 +324,6 @@ class TreeWalker(object):
             
         return code
 
-    def guri(self, ast, code):
-        return self.uri(ast, code, "guri")
-
     def uri(self, ast, code, base_class):
         method_name = args = ''
 
@@ -364,6 +335,9 @@ class TreeWalker(object):
             code = "%s'%s'=>%s, " % (code, key, value)
 
         return "%s)); ?>" % self.rreplace(code, ',', '', 1)
+
+    def guri(self, ast, code):
+        return self.uri(ast, code, "guri")
 
     def buri(self, ast, code):
         return self.uri(ast, code, "buri")
@@ -418,6 +392,9 @@ class TreeWalker(object):
         )
 
         return '%s<? endforeach; ?>' % code
+    
+    def parameter(self, ast, code):
+        return '%s, ' % self.__walk_tree(self.param_handler, ast, code)
                 
     """
     An if statement in smarty:
@@ -434,7 +411,7 @@ class TreeWalker(object):
         # Walking the expressions in an if statement.
         code = self.__walk_tree (self.param_handler, ast, code)
         
-        code = "%s): ?>" % code
+        code = "%s): ?>" % self.rreplace(code, ',', '', 1)
          
         # The content inside the if statement.
         code = self.__walk_tree (self.language_handler, ast, code)
@@ -459,16 +436,13 @@ class TreeWalker(object):
     {elseif expression (operator expression)}
     """        
     def elseif_statement(self, ast, code):
-        handler = {'smarty_language': self.smarty_language}
 
         code = "%s<? elseif(" % code
 
-        # Walking the expressions in an if statement.
-        code = self.__walk_tree (self.param_handler, ast, code)
+        # Walking the expressions in an elseif statement.
+        code = "%s): ?>" % self.__walk_tree (self.param_handler, ast, code)
 
-        code = "%s): ?>" % code
-
-        return self.__walk_tree (handler, ast, code)
+        return self.__walk_tree (self.language_handler, ast, code)
 
     """
     The else part of an if statement.
@@ -547,6 +521,7 @@ class TreeWalker(object):
                 'string': self.string,
                 'variable_string': self.variable_string,
                 'object_dereference': self.object_dereference,
+                'function_statement': self.function_statement,
                 'array': self.array,
                 'modifier': self.modifier
             },
@@ -576,12 +551,17 @@ class TreeWalker(object):
             'string': self.string,
             'variable_string': self.variable_string,
             'dereference': self.dereference,
+            'assignment_op': self.assignment_op,
             'array': self.array
         }
 
         for k, v in ast:
-           code = "%s%s" % (code, handlers[k](v, ""))
+            code = "%s%s" % (code, handlers[k](v, ""))
 
+        return code
+
+    def assignment_op(self, ast, code):
+        print ast
         return code
 
     def dereference(self, ast, code):
@@ -619,6 +599,9 @@ class TreeWalker(object):
             code = "%s[]" % code
 
         return code
+
+    def translate(self, ast, code):
+        return "___(%s)" % self.__walk_tree(self.language_handler, ast, code)
     
     """
     A string in Smarty.
