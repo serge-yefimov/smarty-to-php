@@ -1,13 +1,13 @@
 #! /bin/bash
-if [ $2 -eq 1] ; then 
-   python26 main.py -d $1
-else 
-   testdir='./test/'
-   phtml='.phtml'
-   tpl='.tpl'
-   filename=$1
-   input=$testdir$filename$tpl
-   output=$filename$phtml
+#if [ $2 -eq 1 ] ; then 
+#   python26 main.py -d $1
+#else 
+testdir='./test/'
+phtml='.phtml'
+tpl='.tpl'
+filename=$1
+input=$testdir$filename$tpl
+output=$filename$phtml
 
-   python26 main.py -s $input -p $output
-fi
+python26 main.py -s $input -p $output
+#fi

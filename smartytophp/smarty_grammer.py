@@ -65,7 +65,7 @@ def boolean():                  return [false, true]
 
 def dollar():                   return '$'
 
-def assign():                   return re.compile(r'[->]+')
+def assign():                   return '->'
 
 def not_operator():             return '!'
 
@@ -79,14 +79,14 @@ def modifier():                 return [object_dereference, array, symbol, varia
 
 def modifier_right():           return ('|', [default, escape, symbol], -1, (':', exp_no_modifier),)
 
-def static_param():             return re.compile(r'[\'A-Za-z\-,\'\/\:\. ]+')
+def static_param():             return [re.compile(r'[\'A-Za-z\-,\'\/\:\. ]+'), expression]
 
-def static_call():              return re.compile(r'\$static\->\call\('), static_param, -1, (',', static_param), ')'
+def static_call():              return junk, dollar, keyword('static'), assign, keyword('call'), left_paren, static_param, -1, (',', static_param), right_paren, junk
 #def static_call():              return dollar, keyword('static->call'), left_paren, -2, static_param, right_paren
 
 def php_fun():                  return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
 
-def expression():               return [modifier, object_dereference, function_statement, array, symbol, string, variable_string]
+def expression():               return [static_call, modifier, object_dereference, function_statement, array, symbol, string, variable_string]
 
 def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
 

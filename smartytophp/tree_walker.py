@@ -103,12 +103,36 @@ class TreeWalker(object):
             'guri_statement': self.guri,
             'uri_statement': self.uri,
             'buri_statement': self.buri,
+            'static_call': self.static_call,
             'translate': self.translate
         }
         
         return self.__walk_tree(handler, ast, code)
 
     def math_statement(self, ast, code):
+        return code
+
+    def static_param(self, ast, code):
+        static_call = ast[1][0].split(', ')
+        quotes = re.compile(r'[\'\"]')
+        if len(static_call) >= 2:
+            static_class = quotes.sub("", static_call[0])
+            static_fun = quotes.sub("", static_call[1])
+
+            code = "%s%s::%s(" % (code, static_class, static_fun)
+            if len(static_call) > 2:
+                static_params = static_call[2:]
+                code = "%s%s)" % (code, ", ".join(static_params))
+            else:
+                code = "%s)" % code
+        print code
+        return code
+
+    def static_call(self, ast, code): 
+        for v in ast:
+            if v[0] == 'static_param':
+                code = self.static_param(v, code)
+                
         return code
 
     def assign_var(self, ast, code):
@@ -122,20 +146,7 @@ class TreeWalker(object):
         expression = ''
         for k, v in ast:
             if k == 'static_call':
-                for text in v:
-                    if text[0] == 'static_param':
-                        static_call = text[1].split(', ')
-                        if len(static_call) >= 2:
-                            static_class = static_call[0].replace('\'', '')
-                            static_fun = static_call[1].replace('\'', '')
-                            code = "%s%s::%s(" % (code, static_class, static_fun)
-                            if len(static_call) > 2:
-                                static_params = static_call[2:]
-                                code = "%s%s)" % (code, ", ".join(static_params))
-                            else:
-                                code = "%s)" % code
-                        else: 
-                            print "STATIC CALL ERROR!"
+                code = self.__walk_tree({'static_call': self.static_call},  ast, code)
             elif k == 'php_fun':
                 code = '%s%s' % (code, v[0])
             else:
@@ -329,7 +340,6 @@ class TreeWalker(object):
 
         code = "%s <?= %s(array(" % (code, base_class)
         for k, v in ast:
-            #_method(ast, code)
             key = self.__walk_tree(self.symbol_handler, v, "")
             value = self.__walk_tree(self.expression_handler, v, "")
             code = "%s'%s'=>%s, " % (code, key, value)
