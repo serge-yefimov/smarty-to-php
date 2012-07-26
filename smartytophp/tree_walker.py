@@ -19,6 +19,8 @@ class TreeWalker(object):
     keywords = {
         'foreachelse': '<? else: ?>',
         'else': '<? else: ?>',
+        'rdelim': '{rdelim}',
+        'ldelim': '{ldelim}'
     }
 
     """
@@ -26,10 +28,6 @@ class TreeWalker(object):
     """
     def __init__(self, ast, extension="", path=""):
         self.language_handler = { 'smarty_language': self.smarty_language }
-        self.include_handler = { 
-            'symbol': self.symbol,
-            'expression': self.expression
-        }
         self.symbol_handler = { 'symbol': self.symbol }
         self.expression_handler = { 'expression': self.expression }
         self.operator_handler = {
@@ -99,8 +97,11 @@ class TreeWalker(object):
             'print_statement': self.print_statement,
             'for_statement': self.for_statement,
             'literal': self.literal,
+            'strip': self.strip,
+            'capture_statement': self.capture_statement,
             'assign_statement': self.assign,
             'guri_statement': self.guri,
+            'curi_statement': self.curi,
             'uri_statement': self.uri,
             'buri_statement': self.buri,
             'static_call': self.static_call,
@@ -109,31 +110,58 @@ class TreeWalker(object):
         
         return self.__walk_tree(handler, ast, code)
 
+    def strip(self, ast, code):
+        stripped = ast
+        stripped = stripped.replace('{/strip}', '')
+        stripped = stripped.replace('{strip}', '')
+        
+        return "%s%s" % (code, stripped)
+
+    def capture_assign(self, ast, code):
+        return "%s$%s" % (code, self.__walk_tree(self.symbol_handler, ast, ""))
+
+    def capture_name(self, ast, code):
+        return "%s$%s" % (code, self.__walk_tree(self.symbol_handler, ast, ""))
+
+    def capture_statement(self, ast, code):
+        capture_handler = {
+            'capture_name': self.capture_name,
+            'capture_assign': self.capture_assign
+        }
+
+        code = "%s<? %s = " % (code, self.__walk_tree(capture_handler, ast, ""))
+
+        return "%s%s; ?>" % (code, self.__walk_tree(self.language_handler, ast, ""))
+
     def math_statement(self, ast, code):
         return code
 
-    def static_param(self, ast, code):
-        static_call = ast[1][0].split(', ')
-        quotes = re.compile(r'[\'\"]')
-        if len(static_call) >= 2:
-            static_class = quotes.sub("", static_call[0])
-            static_fun = quotes.sub("", static_call[1])
+    def static_class(self, ast, code):
+        return ast[2].strip('\'')
 
-            code = "%s%s::%s(" % (code, static_class, static_fun)
-            if len(static_call) > 2:
-                static_params = static_call[2:]
-                code = "%s%s)" % (code, ", ".join(static_params))
-            else:
-                code = "%s)" % code
-        print code
-        return code
+    def static_function(self, ast, code):
+        return ast[2].strip('\'')
+
+    def static_param(self, ast, code):
+        return self.__walk_tree(self.expression_handler, ast, code)
 
     def static_call(self, ast, code): 
-        for v in ast:
-            if v[0] == 'static_param':
-                code = self.static_param(v, code)
-                
-        return code
+        static_handler = {
+            'static_param': self.static_param,
+            'static_function': self.static_function,
+            'static_class': self.static_class
+        }
+
+        static_class = static_fun = args = ''
+
+        static_class = self.__walk_tree({'static_class': self.static_class}, ast, code)
+        static_function = self.__walk_tree({'static_function': self.static_function}, ast, code)
+
+        for k, v in ast:
+            if k == 'static_param':
+                args = '%s%s' % (args, self.__walk_tree({'static_param': self.static_param}, ast, ""))
+
+        return "%s%s::%s(%s)" % (code, static_class, static_function, args)
 
     def assign_var(self, ast, code):
         for k, v in ast:
@@ -263,7 +291,7 @@ class TreeWalker(object):
         function_name = self.__walk_tree (self.symbol_handler, ast, "")
         expression = self.__walk_tree(self.expression_handler, ast, "")
         
-        code = "%s<?= %s(%s) ?>" % ( code, function_name, expression)
+        code = "%s%s(%s)" % (code, function_name, expression)
         return code
         
     """
@@ -273,16 +301,22 @@ class TreeWalker(object):
     {foo|bar:parameter}
     """
     def print_statement(self, ast, code):
+        print_handler = {
+            'expression_handler': self.expression,
+            'guri_statement': self.guri,
+            'curi_statement': self.curi,
+            'uri_statement': self.uri,
+            'buri_statement': self.buri
+        }
                         
-        # Walking the expression that starts a
-        # modifier statement.
+        # Walking the expression that starts a modifier statement.
         expression = self.__walk_tree (self.expression_handler, ast, "")
         
         # Perform any keyword replacements if found.        
         if self.keywords.has_key(expression):
-            return "%s%s" % ( code, self.keywords[expression])
+            return "%s%s" % (code, self.keywords[expression])
                 
-        return "%s<?= %s ?>" % ( code, expression)
+        return "%s<?= %s ?>" % (code, expression)
         
     """
     A modifier statement:
@@ -314,6 +348,7 @@ class TreeWalker(object):
             'default': self.default,
             'string': self.string,
             'escape': self.escape,
+            'urldecode': self.urldecode,
             'variable_string': self.variable_string
         }
 
@@ -321,39 +356,41 @@ class TreeWalker(object):
 
     def escape(self, ast, code):
         escape_type = self.__walk_tree(self.expression_handler, ast, "")
+
         if escape_type:
            code = "%s, %s" % (code, escape_type)
         else:
            code = "%s" % code
 
-        return "escape(%s);" % code
+        return "escape(%s)" % code
 
-    def uri_param(self, ast, code):
-        self.__walk_tree(self.symbol_handler, v, "")
-        for k, v in ast:
-            print self.__walk_tree(self.expression_handler, v, "")
-            
-        return code
+    def urldecode(self, ast, code):
+        return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, "")
 
     def uri(self, ast, code, base_class):
         method_name = args = ''
 
-        code = "%s <?= %s(array(" % (code, base_class)
+        code = "%s<?= %s" % (code, base_class)
+        i = 0
         for k, v in ast:
             key = self.__walk_tree(self.symbol_handler, v, "")
             value = self.__walk_tree(self.expression_handler, v, "")
-            code = "%s'%s'=>%s, " % (code, key, value)
+            if i == 0:
+                code = "%s%s(%s, " % (code, key, value)
+            else:
+                code = "%s%s, " % (code, value)
+            i += 1
 
-        return "%s)); ?>" % self.rreplace(code, ',', '', 1)
+        return "%s) ?> " % self.rreplace(code, ', ', '', 1)
 
     def guri(self, ast, code):
-        return self.uri(ast, code, "guri")
+        return self.uri(ast, code, "GuideURI::")
 
     def buri(self, ast, code):
-        return self.uri(ast, code, "buri")
+        return self.uri(ast, code, "URIBase::")
 
     def curi(self, ast, code):
-        return self.uri(ast, code, "curi")
+        return self.uri(ast, code, "URIGenerator::")
         
     """
     Raw content, e.g.,
@@ -380,16 +417,16 @@ class TreeWalker(object):
         
         for k, v in ast:
             if k == 'for_from':
-                _from = "%s as" % self.__walk_tree (self.expression_handler, v, "")
+                _from = "%s as " % self.__walk_tree (self.expression_handler, v, "")
             elif k == 'for_key':
-                _key = "$%s =>" % self.__walk_tree (self.symbol_handler, v, "")
+                _key = "$%s => " % self.__walk_tree (self.symbol_handler, v, "")
             elif k == 'for_item':
                 _item = "$%s" % self.__walk_tree (self.symbol_handler, v, "")
             elif k == 'for_name':
                 _name = "$%s = '';" % self.__walk_tree (self.symbol_handler, v, "")
         
         # TODO: figure out what to do with name and iteration
-        code = "%s<? foreach (%s %s %s): ?> " % (code, _from, _key, _item)
+        code = "%s<? foreach (%s%s%s): ?> " % (code, _from, _key, _item)
 
         # The content inside the if statement.
         code = self.__walk_tree (self.language_handler, ast, code)
@@ -404,7 +441,7 @@ class TreeWalker(object):
         return '%s<? endforeach; ?>' % code
     
     def parameter(self, ast, code):
-        return '%s, ' % self.__walk_tree(self.param_handler, ast, code)
+        return '%s,' % self.__walk_tree(self.param_handler, ast, code)
                 
     """
     An if statement in smarty:
@@ -532,6 +569,7 @@ class TreeWalker(object):
                 'variable_string': self.variable_string,
                 'object_dereference': self.object_dereference,
                 'function_statement': self.function_statement,
+                'static_call': self.static_call,
                 'array': self.array,
                 'modifier': self.modifier
             },
@@ -571,7 +609,6 @@ class TreeWalker(object):
         return code
 
     def assignment_op(self, ast, code):
-        print ast
         return code
 
     def dereference(self, ast, code):
@@ -610,9 +647,16 @@ class TreeWalker(object):
 
         return code
 
+    def translate_params(self, ast, code):
+        params = ', '.join(re.sub("[0-9]+\=", "", ast[1]).split(' '))
+        return "%s, %s" % (code, params)
+
     def translate(self, ast, code):
-        return "___(%s)" % self.__walk_tree(self.language_handler, ast, code)
-    
+        print ast
+
+        params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
+        return "%s <?= ___('%s'%s) ?>" % (code, self.__walk_tree(self.language_handler, ast, ""), params)
+
     """
     A string in Smarty.
     """
@@ -629,12 +673,12 @@ class TreeWalker(object):
     """
     def default(self, ast, code):
         prefix = ''
-        for k, v in ast:
-            bool_val = v[0][0]
-            if k == 'boolean' and  bool_val == 'true':
-                prefix = '!' 
+        default_val = self.__walk_tree(self.expression_handler, ast, "")
 
-        return "%sisset(%s)" % (prefix, code)
+        if default_val:
+            return "%scheck(%s, %s)" % (prefix, code, default_val)
+        else:
+            return "%scheck(%s)" % (prefix, code)
 
     """
     Boolean values in Smarty 
@@ -656,12 +700,16 @@ class TreeWalker(object):
         variable = ast[0]
         
         # Is there a ! operator.
-        if len(ast[0]) > 0:
-            if ast[0][0] == 'not_operator':
-                code = "!$%s" % code
-            elif ast[0][0] == 'dollar':
+        if len(variable) > 0:
+            if variable[0] == 'not_operator':
+                next_sym = ast[1][0]
+                if  next_sym == 'dollar':
+                    code = "!$%s" % code
+                else:
+                    code = "!%s" % code
+            elif variable[0] == 'dollar':
                 code = "$%s" % code
-            elif ast[0][0] == 'at_operator':
+            elif variable[0] == 'at_operator':
               pass # are @ symbols supported?
         
         # Maybe there was a $ on the symbol?.
@@ -669,4 +717,4 @@ class TreeWalker(object):
             variable = ast[len(ast) - 1]
             
         return "%s%s" % (code, variable)
-        
+       
