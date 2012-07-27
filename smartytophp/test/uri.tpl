@@ -1,3 +1,5 @@
+{GURI viewQuestion=$question->postid commentid=$comment->commentid}
+{GURI askAboutDevice=$aConf->getDevice()}
 {GURI css=$stylesheet}
 {GURI js=$script}
 {GURI 
@@ -7,4 +9,3 @@ suffix="png"}
 {GURI viewGuideInCooliris=$guideid langid=$langid}
 {BURI customCSS=''}
 {CURI customCSS=''}
-

@@ -1,5 +1,9 @@
+{assign var=tip value=$aConf->getTip()}
+{assign var='tag' value=$aConf->getTag('normal')}
+{assign var='search' value=$aConf->search}
 {assign var="which" value=$static->call('SiteSpecific', 'which')} 
 {assign var="socialButtonsEnabled" value=$static->call('ServerConstants', 'getSetting', 'social-buttons-enabled')}
+{assign var="siteTitle" value=$static->call('ServerConstants', 'getSetting', 'site-title')|escape}
 {assign var='search' value=$aConf->search}
 {assign var=creating value=$creating|default:false}
 {assign var=simplePageLayout value=false}
