@@ -84,10 +84,7 @@ def main():
             for filename in filenames:
                 if filename.endswith('.tpl'):
                     output_filename = filename.rstrip('.tpl')+output_file_type
-                    print output_filename
-                    #print filename, output_filename
                     convert(os.path.join(dirname, filename), os.path.join(dirname, output_filename))
-                    #print os.path.join(dirname, filename)
 
 def convert(input_file, output_file):
     # Parse the file into tokens

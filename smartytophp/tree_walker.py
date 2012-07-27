@@ -12,8 +12,8 @@ class TreeWalker(object):
     # Lookup tables for performing some token
     # replacements not addressed in the grammar.
     replacements = {
-        'smarty\.foreach.*\.index': 'loop.index0',
-        'smarty\.foreach.*\.iteration': 'loop.index'
+        'smarty\.foreach.*\.index': 'index fix this##',
+        'smarty\.foreach.*\.iteration': 'iteration fix this##'
     }
     
     keywords = {
@@ -38,6 +38,8 @@ class TreeWalker(object):
             'lt_operator': self.lt_operator,
             'gt_operator': self.gt_operator,
             'ne_operator': self.ne_operator,
+            'nee_operator': self.nee_operator,
+            'not_operator': self.not_operator,
             'or_operator': self.or_operator
         }
 
@@ -45,8 +47,19 @@ class TreeWalker(object):
             'expression': self.expression,
             'operator': self.operator,
             'parameter': self.parameter,
-            'right_paren': None,
-            'left_paren': None
+            'not_operator': self.not_operator,
+            'and_operator': self.and_operator,
+            'equals_operator': self.equals_operator,
+            'gte_operator': self.gte_operator,
+            'lte_operator': self.lte_operator,
+            'lt_operator': self.lt_operator,
+            'gt_operator': self.gt_operator,
+            'ne_operator': self.ne_operator,
+            'nee_operator': self.nee_operator,
+            'not_operator': self.not_operator,
+            'or_operator': self.or_operator,
+            'right_paren': self.rparen,
+            'left_paren': self.lparen 
         }
 
         self.extension = 'phtml'
@@ -67,11 +80,7 @@ class TreeWalker(object):
     def __walk_tree(self, handlers, ast, code):
         for k, v in ast:
             if handlers.has_key(k):
-                if k == 'right_paren':
-                    code = "%s)" % code
-                elif k == 'left_paren':
-                    code = "%s(" % code
-                elif k == 'comment':
+                if k == 'comment':
                     # Comments in php have <? /* not {*
                     code = "%s<? /* %s */ ?>" % (
                         code,
@@ -171,14 +180,7 @@ class TreeWalker(object):
         return code
 
     def assign_value(self, ast, code):
-        expression = ''
-        for k, v in ast:
-            if k == 'static_call':
-                code = self.__walk_tree({'static_call': self.static_call},  ast, code)
-            elif k == 'php_fun':
-                code = '%s%s' % (code, v[0])
-            else:
-                expression = '%s' % self.__walk_tree(self.expression_handler, ast, "")
+        expression = '%s' % self.__walk_tree(self.expression_handler, ast, "")
 
         if expression:
             return "%s%s" % (code, expression)
@@ -192,6 +194,40 @@ class TreeWalker(object):
         }
 
         return "%s<? %s; ?>" % (code, self.__walk_tree(handlers, ast, code))
+
+    def open_tag(self, ast, code):
+        return '%s<? ' % code
+
+    def close_tag(self, ast, code):
+        return '%s ?>' % code
+
+    def dollar(self, ast, code):
+        return '%s$' % code
+
+    def arrow(self, ast, code):
+        return '%s->' % code
+
+    def lparen(self, ast, code):
+        return '%s(' % code
+
+    def rparen(self, ast, code):
+        return '%s)' % code
+
+    def php_param(self, ast, code):
+        return code
+
+    def php_fun(self, ast, code):
+        php_handler = {
+            'dollar': self.dollar,
+            'arrow': self.arrow,
+            'symbol': self.symbol,
+            'left_paren': self.lparen,
+            'expression': self.expression,
+            'right_paren': self.rparen
+        }
+
+        base = self.__walk_tree(php_handler, ast, code)
+        return "%s%s" % (code, base)
         
     """
     A literal block in smarty, we can just drop the {literal} tags because 
@@ -330,7 +366,9 @@ class TreeWalker(object):
             'string': self.string,
             'variable_string': self.variable_string,
             'object_dereference': self.object_dereference,
-            'modifier_right': self.modifier_right
+            'modifier_right': self.modifier_right,
+            'static_call': self.static_call,
+            'php_fun': self.php_fun
         }
                 
         # Walking the expression that starts a modifier statement.
@@ -348,6 +386,7 @@ class TreeWalker(object):
             'default': self.default,
             'string': self.string,
             'escape': self.escape,
+            'wordbreak': self.wordbreak,
             'urldecode': self.urldecode,
             'variable_string': self.variable_string
         }
@@ -367,14 +406,35 @@ class TreeWalker(object):
     def urldecode(self, ast, code):
         return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, "")
 
+    def wordbreak(self, ast, code):
+        return "wordbreak(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
+    def php_obj(self, ast, code):
+        uri_handler = {
+            'symbol': self.symbol,
+            'arrow': self.arrow,
+            'left_paren': self.lparen,
+            'right_paren': self.rparen,
+            'dollar': self.dollar
+        }
+
+        return self.__walk_tree(uri_handler, ast, code)
+
     def uri(self, ast, code, base_class):
+        uri_handler = {
+            'expression': self.expression,
+            'php_obj': self.php_obj,
+            'arrow': self.arrow,
+            'dollar': self.dollar
+        }
+
         method_name = args = ''
 
         code = "%s<?= %s" % (code, base_class)
         i = 0
         for k, v in ast:
             key = self.__walk_tree(self.symbol_handler, v, "")
-            value = self.__walk_tree(self.expression_handler, v, "")
+            value = self.__walk_tree(uri_handler, v, "")
             if i == 0:
                 code = "%s%s(%s, " % (code, key, value)
             else:
@@ -536,6 +596,12 @@ class TreeWalker(object):
     """
     def ne_operator(self, ast, code):
         return '%s != ' % code
+
+    """
+    ne, neq, != opeartor in Smarty.
+    """
+    def nee_operator(self, ast, code):
+        return '%s !== ' % code
     
     """
     &&, and operator in Smarty.
@@ -554,6 +620,9 @@ class TreeWalker(object):
     """
     def equals_operator(self, ast, code):
         return '%s == ' % code
+
+    def not_operator(self, ast, code):
+        return '%s!' % code
     
     """
     A top level expression in Smarty that statements
@@ -569,6 +638,7 @@ class TreeWalker(object):
                 'variable_string': self.variable_string,
                 'object_dereference': self.object_dereference,
                 'function_statement': self.function_statement,
+                'php_fun': self.php_fun,
                 'static_call': self.static_call,
                 'array': self.array,
                 'modifier': self.modifier
@@ -652,8 +722,6 @@ class TreeWalker(object):
         return "%s, %s" % (code, params)
 
     def translate(self, ast, code):
-        print ast
-
         params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
         return "%s <?= ___('%s'%s) ?>" % (code, self.__walk_tree(self.language_handler, ast, ""), params)
 

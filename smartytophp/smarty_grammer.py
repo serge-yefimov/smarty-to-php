@@ -10,13 +10,14 @@ from pyPEG import parse, keyword, _and, _not, ignore
 """
 Misc.
 """
+
 def content():                  return re.compile(r'[^{]+')
 
 def comment():                  return re.compile("{\*.*?\*}", re.S)
 
 def literal():                  return re.compile("{literal}.*?{/literal}", re.S)
 
-def strip():                  return re.compile("{strip}.*?{/strip}", re.S)
+def strip():                    return re.compile("{strip}.*?{/strip}", re.S)
 
 def junk():                     return -1, re.compile(r'\s')
 
@@ -35,6 +36,8 @@ def equals_operator():          return ['==', keyword('eq')]
 
 def ne_operator():              return ['!=', keyword('ne'), keyword('neq')]
 
+def nee_operator():             return '!=='
+
 def gt_operator():              return ['>', 'gt']
 
 def lt_operator():              return ['<', 'gt']
@@ -47,7 +50,7 @@ def right_paren():              return junk, ')'
 
 def left_paren():               return junk, '('
 
-def operator():                 return 0, ' ', [and_operator, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, ne_operator, or_operator]
+def operator():                 return 0, ' ', [not_operator, at_operator, and_operator, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, nee_operator, ne_operator, or_operator], junk
 
 """
 Smarty variables.
@@ -77,9 +80,21 @@ def symbol():                   return -1, [' ', '\n', '\t'], 0, [not_operator, 
 
 def array():                    return symbol, "[", 0, expression, "]"
 
-def modifier():                 return [object_dereference, array, symbol, variable_string, string], -2, modifier_right, 0, ' '
+def exp_no_modifier():          return [object_dereference, static_call, php_fun, boolean, array, symbol, variable_string, string]
 
-def modifier_right():           return '|', [default, urldecode, escape, symbol], -1, (':', exp_no_modifier)
+def modifier():                 return [static_call, php_fun, object_dereference, boolean, array, symbol, variable_string, string], -2, modifier_right, 0, junk
+
+def modifier_right():           return '|', [default, urldecode, escape, wordbreak, symbol], -1, (':', exp_no_modifier)
+
+def object_dereference():       return [array, symbol], -2, [dereference, assignment_op]
+
+def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
+
+def assignment_op():            return arrow, symbol, 0, left_paren, 0, expression, -1, (',', expression), 0, right_paren, 0, junk
+
+def php_obj():                  return junk, symbol, arrow, symbol, 0, left_paren, 0, right_paren, junk
+
+def php_fun():                  return junk, symbol, arrow, symbol, 0, left_paren, 0, expression, -1, (',', expression), 0, right_paren, junk
 
 def static_class():             return junk, quotes, re.compile(r'\w+'), quotes, junk
 
@@ -87,31 +102,24 @@ def static_function():          return junk, quotes, re.compile(r'\w+'), quotes,
 
 def static_param():             return junk, expression, junk
 
-def static_call():              return junk, dollar, keyword('static'), arrow, keyword('call'), left_paren, static_class, ',', static_function, -1, (',', static_param), right_paren, junk
+def static_call():              return junk, -1, operator, dollar, keyword('static'), arrow, keyword('call'), left_paren, static_class, ',', static_function, -1, (',', static_param), right_paren, junk
 #def static_call():              return dollar, keyword('static->call'), left_paren, -2, static_param, right_paren
 
-def php_fun():                  return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
-
-def expression():               return [static_call, modifier, object_dereference, function_statement, array, symbol, string, variable_string, php_fun]
-
-def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
-
-def assignment_op():            return arrow, re.compile(r".*?\(.*?\)")
-
-def object_dereference():       return [array, symbol], -2, [dereference, assignment_op]
-
-def exp_no_modifier():          return [object_dereference, boolean, array, symbol, variable_string, string]
+#def php_fun():                  return re.compile(r'\$\w+->\w+'), 0, re.compile(r'\(\)')
+def expression():               return [modifier, static_call, php_fun, object_dereference, function_statement, array, symbol, string, variable_string]
 
 def default():                  return keyword('default'), ':', expression
 
-def escape():                   return keyword('escape')
+def escape():                   return keyword('escape'), 0, ':', 0, expression
 
 def urldecode():                return keyword("urldecode")
+
+def wordbreak():                return keyword("wordbreak"), 0, ':', 0, expression
 
 """
 Smarty statements.
 """
-def parameter():                return junk, 0, operator, 0, left_paren, expression, 0, right_paren, -1, (operator, 0, left_paren, expression, 0, right_paren), junk
+def parameter():                return junk, -1, [nee_operator, ne_operator, operator], -1, left_paren, expression, -1, right_paren, -1, (-1, [ne_operator, operator], -1, left_paren, expression, -1, right_paren), junk
 
 def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, -1, [else_statement, elseif_statement], '{/', keyword('if'), '}'
 
@@ -135,7 +143,7 @@ def print_statement():          return '{', 0, 'e ', -2, [expression, guri_state
 
 def assign_var():               return junk, keyword('var'), 0, equals, quotes, symbol, quotes, junk
 
-def assign_value():             return junk, keyword('value'), 0, equals, [static_call, php_fun, expression], quotes
+def assign_value():             return junk, keyword('value'), 0, equals, expression, quotes
 
 def assign_statement():         return '{', keyword('assign'), assign_var, assign_value, '}'
 
@@ -154,7 +162,7 @@ def function_statement():       return junk, 0, operator, symbol, left_paren, ex
 """
 iFixit specific statements
 """
-def uri_param():                return junk, symbol, equals, expression, junk
+def uri_param():                return junk, symbol, equals, [php_obj, expression], junk
 
 def uri_statement():            return '{', keyword('URI'), -2, uri_param, '}'
 
@@ -164,7 +172,7 @@ def curi_statement():           return '{', keyword('CURI'), -2, uri_param, '}'
 
 def guri_statement():           return '{', keyword('GURI'), -2, uri_param, '}'
 
-def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\;\=\+\-\_\$\%\<\>\/ ]+'), junk
+def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\;\=\+\-\.\_\$\%\<\>\/\'\"\| ]+'), junk
 
 def translate():                return '{', keyword('t'), 0, translate_params, '}', -2, smarty_language, '{/', keyword('t'), '}'
 
