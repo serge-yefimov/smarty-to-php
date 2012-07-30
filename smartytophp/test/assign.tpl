@@ -1,3 +1,5 @@
+{assign var=tag value=Row/yourboat.png}
+{assign var=sizeClass value=largeImageLinkDiv}
 {assign var=tip value=$aConf->getTip()}
 {assign var='tag' value=$aConf->getTag('normal')}
 {assign var='search' value=$aConf->search}

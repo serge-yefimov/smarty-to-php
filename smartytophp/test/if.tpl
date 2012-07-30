@@ -14,10 +14,15 @@
 {if $modVoteAllowed|default:false && ($curUserid != $post->userid || $canForceVote|default:false)}{/if}
 {if $aConf->search !== false} for <em>{$aConf->search|wordbreak:20}</em>{/if}
 {if $question->userid == $curUserid &&
- (!$post->isQuestion) && (!($question->is_discussion &&
- $static->call('ServerConstants', 'getSetting', 'feature-answers-is-discussion')))}
+ (!$post->isQuestion) && !($question->is_discussion &&
+ $static->call('ServerConstants', 'getSetting', 'feature-answers-is-discussion'))}
    &bull;
    <a id="acceptAnswer-{$post->postid}" class="muted toggleAcceptLink" 
    data-postid="{$post->postid}">
     {if $accepted}{t}Unaccept Answer{/t}{else}{t}Accept Answer{/t}{/if}</a>
 {/if}
+
+ {if $question->blurb->is_discussion && $static->call('ServerConstants',
+ 'enabled', 'feature-answers-is-discussion')}{/if}
+
+ {if $post->blurbs.questions|@count > 0}{/if}
