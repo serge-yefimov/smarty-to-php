@@ -40,6 +40,7 @@ class TreeWalker(object):
             'ne_operator': self.ne_operator,
             'nee_operator': self.nee_operator,
             'not_operator': self.not_operator,
+            'mod': self.mod_operator,
             'or_operator': self.or_operator
         }
 
@@ -110,6 +111,7 @@ class TreeWalker(object):
             'capture_statement': self.capture_statement,
             'assign_statement': self.assign,
             'guri_statement': self.guri,
+            'wiki_statement': self.wiki,
             'curi_statement': self.curi,
             'uri_statement': self.uri,
             'buri_statement': self.buri,
@@ -124,7 +126,7 @@ class TreeWalker(object):
         stripped = stripped.replace('{/strip}', '')
         stripped = stripped.replace('{strip}', '')
         
-        return "%s%s" % (code, stripped)
+        return "%strim(%s)" % (code, stripped)
 
     def capture_assign(self, ast, code):
         return "%s$%s" % (code, self.__walk_tree(self.symbol_handler, ast, ""))
@@ -138,9 +140,13 @@ class TreeWalker(object):
             'capture_assign': self.capture_assign
         }
 
-        code = "%s<? %s = " % (code, self.__walk_tree(capture_handler, ast, ""))
+        name = re.sub("\$", "", self.__walk_tree(capture_handler, ast, ""))
 
-        return "%s%s; ?>" % (code, self.__walk_tree(self.language_handler, ast, ""))
+        code = "%s<? captureStart('%s'); ?>" % (code, name)
+
+        code = "%s%s" % (code, self.__walk_tree(self.language_handler, ast, ""))
+        
+        return "%s<? captureEnd('%s'); ?>" % (code, name)
 
     def math_statement(self, ast, code):
         return code
@@ -179,8 +185,29 @@ class TreeWalker(object):
 
         return code
 
+    def forward_slash(self, ast, code):
+        return code + '/'
+
+    def period(self, ast, code):
+        return code + '.'
+
+    def file_path(self, ast, code):
+        handler = {
+            'symbol': self.symbol,
+            'forward_slash': self.forward_slash,
+            'period': self.period
+        }
+
+        path = self.__walk_tree(handler, ast, code)
+        return "%s'%s'" % (code, path)
+
     def assign_value(self, ast, code):
-        expression = '%s' % self.__walk_tree(self.expression_handler, ast, "")
+        assign_value_handler = {
+            'expression': self.expression,
+            'file_path': self.file_path
+        }
+
+        expression = '%s' % self.__walk_tree(assign_value_handler, ast, "")
 
         if expression:
             return "%s%s" % (code, expression)
@@ -293,12 +320,16 @@ class TreeWalker(object):
     # Deal with the special case of an include function in
     # smarty this should be mapped onto php's include tag.
     def include_statement(self, ast, code):
+        handler = {
+            'expression': self.expression,
+            'file_path': self.file_path
+        }
         params = {}
         args = filename = ''
         for k, v in ast:
             if k == 'include_params':
                 symbol = self.__walk_tree(self.symbol_handler, v, "")
-                expression = self.__walk_tree(self.expression_handler, v, "")
+                expression = self.__walk_tree(handler, v, "")
                 params[symbol] = expression
 
         if len(params) > 1 and 'file' in params:
@@ -306,10 +337,10 @@ class TreeWalker(object):
 
         for k, v in params.items():
             if k == 'file':
-                filename = v
+                filename = re.sub("\.tpl", ".phtml", v)
             # create additional args array
             else:
-                args += '%s=>%s, ' % (k, v)
+                args += '"%s"=>%s, ' % (k, v)
                 
         # if there are args, remove the trailing `,` from the array
         if not args == '':
@@ -340,6 +371,7 @@ class TreeWalker(object):
         print_handler = {
             'expression_handler': self.expression,
             'guri_statement': self.guri,
+            'wiki_statement': self.wiki,
             'curi_statement': self.curi,
             'uri_statement': self.uri,
             'buri_statement': self.buri
@@ -388,10 +420,33 @@ class TreeWalker(object):
             'escape': self.escape,
             'wordbreak': self.wordbreak,
             'urldecode': self.urldecode,
-            'variable_string': self.variable_string
+            'regex_replace': self.regex_replace,
+            'truncate': self.truncate,
+            'lower': self.lower,
+            'count': self.count,
+            'upper': self.upper,
+            'capitalize': self.capitalize,
+            'local_date': self.local_date,
+            'variable_string': self.variable_string,
         }
 
         return self.__walk_tree(handler, ast, code)
+
+    def regex_replace(self, ast, code):
+        params = []
+        for k, v in ast:
+            method = getattr(self, k)
+            params.append(method(v, ""))
+
+        return "regex_replace(%s, %s)" % (code, ', '.join(params))
+
+    def truncate(self, ast, code):
+        params = []
+        for k, v in ast:
+            method = getattr(self, k)
+            params.append(method(v, ""))
+
+        return "truncate(%s, %s)" % (code, ', '.join(params))
 
     def escape(self, ast, code):
         escape_type = self.__walk_tree(self.expression_handler, ast, "")
@@ -403,11 +458,26 @@ class TreeWalker(object):
 
         return "escape(%s)" % code
 
+    def lower(self, ast, code):
+        return "lower(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
+    def count(self, ast, code):
+        return "@count(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
+    def capitalize(self, ast, code):
+        return "capitalize(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
+    def upper(self, ast, code):
+        return "upper(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
     def urldecode(self, ast, code):
-        return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, "")
+        return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, code)
 
     def wordbreak(self, ast, code):
         return "wordbreak(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+
+    def local_date(self, ast, code):
+        return "local_date(%s)" % self.__walk_tree(self.expression_handler, ast, code)
 
     def php_obj(self, ast, code):
         uri_handler = {
@@ -423,6 +493,7 @@ class TreeWalker(object):
     def uri(self, ast, code, base_class):
         uri_handler = {
             'expression': self.expression,
+            'file_path': self.file_path,
             'php_obj': self.php_obj,
             'arrow': self.arrow,
             'dollar': self.dollar
@@ -440,6 +511,24 @@ class TreeWalker(object):
             else:
                 code = "%s%s, " % (code, value)
             i += 1
+
+        return "%s) ?> " % self.rreplace(code, ', ', '', 1)
+
+    def wiki(self, ast, code):
+        uri_handler = {
+            'expression': self.expression,
+            'php_obj': self.php_obj,
+            'arrow': self.arrow,
+            'dollar': self.dollar
+        }
+
+        method_name = args = ''
+
+        code = "%s<?= GuideURI::wikiLink(" % code
+        for k, v in ast:
+            key = self.__walk_tree(self.symbol_handler, v, "")
+            value = self.__walk_tree(uri_handler, v, "")
+            code = "%s%s, " % (code, value)
 
         return "%s) ?> " % self.rreplace(code, ', ', '', 1)
 
@@ -472,12 +561,17 @@ class TreeWalker(object):
     {/foreach}
     """ 
     def for_statement(self, ast, code):
+        from_handler = {
+            'expression': self.expression,
+            'php_obj': self.php_obj,
+            'php_fun': self.php_fun
+        }
 
         name = _from = _key = _item = _name = ''
         
         for k, v in ast:
             if k == 'for_from':
-                _from = "%s as " % self.__walk_tree (self.expression_handler, v, "")
+                _from = "%s as " % self.__walk_tree (from_handler, v, "")
             elif k == 'for_key':
                 _key = "$%s => " % self.__walk_tree (self.symbol_handler, v, "")
             elif k == 'for_item':
@@ -485,7 +579,6 @@ class TreeWalker(object):
             elif k == 'for_name':
                 _name = "$%s = '';" % self.__walk_tree (self.symbol_handler, v, "")
         
-        # TODO: figure out what to do with name and iteration
         code = "%s<? foreach (%s%s%s): ?> " % (code, _from, _key, _item)
 
         # The content inside the if statement.
@@ -623,6 +716,9 @@ class TreeWalker(object):
 
     def not_operator(self, ast, code):
         return '%s!' % code
+
+    def mod_operator(self, ast, code):
+        return code + ' % '
     
     """
     A top level expression in Smarty that statements
@@ -679,7 +775,14 @@ class TreeWalker(object):
         return code
 
     def assignment_op(self, ast, code):
-        return code
+        handlers = {
+            'symbol': self.symbol,
+            'arrow': self.arrow,
+            'left_paren': self.lparen,
+            'right_paren': self.rparen,
+            'dollar': self.dollar
+        }
+        return self.__walk_tree(handlers, ast, code)
 
     def dereference(self, ast, code):
         object_handlers = {
@@ -718,12 +821,17 @@ class TreeWalker(object):
         return code
 
     def translate_params(self, ast, code):
-        params = ', '.join(re.sub("[0-9]+\=", "", ast[1]).split(' '))
+        p_list = re.sub("[0-9]+\=", "", ast[1]).split(' ')
+        for i, item in enumerate(p_list):
+            if (item.startswith('&') and item.endswith(';')) or (item.startswith('<') and item.endswith('>')):
+                p_list[i] = "\"%s\"" % item
+                
+        params = ', '.join(p_list)
         return "%s, %s" % (code, params)
 
     def translate(self, ast, code):
         params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
-        return "%s <?= ___('%s'%s) ?>" % (code, self.__walk_tree(self.language_handler, ast, ""), params)
+        return "%s <?= ___(\"%s\"%s) ?>" % (code, self.__walk_tree(self.language_handler, ast, ""), params)
 
     """
     A string in Smarty.

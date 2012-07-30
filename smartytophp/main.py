@@ -83,8 +83,11 @@ def main():
                 print os.path.join(dirname, subdirname)
             for filename in filenames:
                 if filename.endswith('.tpl'):
-                    output_filename = filename.rstrip('.tpl')+output_file_type
-                    convert(os.path.join(dirname, filename), os.path.join(dirname, output_filename))
+                    output_filename = os.path.join(dirname, os.path.splitext(filename)[0]+output_file_type)
+                    if not os.path.exists(output_filename):
+                        convert(os.path.join(dirname, filename), output_filename)
+                    else:
+                        print "File "+output_filename+" Exists, skipping..."
 
 def convert(input_file, output_file):
     # Parse the file into tokens
