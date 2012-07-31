@@ -25,6 +25,28 @@ def quotes():                   return 0, ['"', '\'']
 
 def equals():                   return '='
 
+def forward_slash():            return '/'
+
+def period():                   return '.'
+
+def right_paren():              return junk, ')'
+
+def left_paren():               return junk, '('
+
+def dollar():                   return '$'
+
+def mod():                      return '%'
+
+def arrow():                    return '->'
+
+def not_operator():             return '!'
+
+def at_operator():              return '@'
+
+def colon_operator():           return ':'
+
+def bar_operator():             return '|'
+
 """
 Logical operators.
 """
@@ -46,41 +68,22 @@ def lte_operator():             return ['<=']
 
 def gte_operator():             return ['>=']
 
-def right_paren():              return junk, ')'
-
-def left_paren():               return junk, '('
-
 def operator():                 return 0, ' ', [nee_operator, ne_operator, at_operator, and_operator, mod, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, or_operator], junk
 
 """
 Smarty variables.
 """
-def text():                     return -2, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')]
-
-def string():                   return 0, ' ', [(re.compile(r'"'), -1, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')], re.compile(r'"')), (re.compile(r'\''), -1, [re.compile(r'[^\'\\]'), re.compile(r'\\.')], re.compile(r'\''))]
-
-def variable_string():          return '"', -2, [text, ('`', expression, '`'), ('$', expression)], '"'
-#def variable_string():          return -2, [re.compile(r'([\"\"\'])(?:(?=(\\?))\2.)*?\1'), re.compile(r'[A-Za-z0-9\/\.\'\"_-]+')]
-
 def false():                    return 'false'
 
 def true():                     return 'true'
 
 def boolean():                  return [false, true]
 
-def dollar():                   return '$'
+def text():                     return -2, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')]
 
-def mod():                      return '%'
+def string():                   return 0, ' ', [(re.compile(r'"'), -1, [re.compile(r'[^$`"\\]'), re.compile(r'\\.')], re.compile(r'"')), (re.compile(r'\''), -1, [re.compile(r'[^\'\\]'), re.compile(r'\\.')], re.compile(r'\''))]
 
-def arrow():                    return '->'
-
-def not_operator():             return '!'
-
-def at_operator():              return '@'
-
-def colon_operator():           return ':'
-
-def bar_operator():             return '|'
+def variable_string():          return '"', -2, [text, ('`', expression, '`'), ('$', expression)], '"'
 
 def symbol():                   return -1, [' ', '\n', '\t'], 0, [not_operator, at_operator], 0, dollar, re.compile(r'[\w\-\+\_]+(?<!-)')
 
@@ -98,6 +101,9 @@ def php_obj():                  return junk, symbol, -2, (arrow, symbol), 0, lef
 
 def php_fun():                  return junk, symbol, -2, (arrow, symbol), 0, left_paren, 0, expression, -1, (',', expression), 0, right_paren, junk
 
+"""
+$static->call
+"""
 def static_class():             return junk, quotes, re.compile(r'\w+'), quotes, junk
 
 def static_function():          return junk, quotes, re.compile(r'\w+'), quotes, junk
@@ -106,8 +112,10 @@ def static_param():             return junk, expression, junk
 
 def static_call():              return junk, -1, [operator, not_operator],  dollar, keyword('static'), arrow, keyword('call'), left_paren, static_class, ',', static_function, -1, (',', static_param), right_paren, junk
 
-def expression():               return [modifier, static_call, object_dereference, php_fun, function_statement, array, symbol, string, variable_string]
 
+"""
+Modifier Statements and Functions
+"""
 def modifier():                 return [static_call, php_fun, object_dereference, boolean, array, symbol, variable_string, string], -2, modifier_right, 0, junk
 
 def modifier_right():           return bar_operator, 0, at_operator, [default, count, truncate, local_date, lower, count, upper, capitalize, urldecode, regex_replace, escape, wordbreak, symbol], 0, modifier_param
@@ -137,6 +145,11 @@ def wordbreak():                return keyword("wordbreak")
 def local_date():               return keyword("local_date")
 
 """
+Base Expression
+"""
+def expression():               return [modifier, static_call, object_dereference, php_fun, function_statement, array, symbol, string, variable_string] 
+
+"""
 Smarty statements.
 """
 def parameter():                return junk, -1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren, -1, (-1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren), junk
@@ -163,12 +176,7 @@ def print_statement():          return '{', 0, 'e ', -2, [expression, wiki_state
 
 def assign_var():               return junk, keyword('var'), 0, equals, quotes, symbol, quotes, junk
 
-def forward_slash():            return '/'
-
-def period():                   return '.'
-
 def file_path():                return symbol, -2, (forward_slash, symbol), period, symbol
-#def file_path():                return re.compile(r'.*?')
 
 def assign_value():             return junk, keyword('value'), 0, equals, [file_path, expression], junk
 
