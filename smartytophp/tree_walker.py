@@ -49,6 +49,7 @@ class TreeWalker(object):
             'operator': self.operator,
             'parameter': self.parameter,
             'not_operator': self.not_operator,
+            'colon_operator': self.not_operator,
             'and_operator': self.and_operator,
             'equals_operator': self.equals_operator,
             'gte_operator': self.gte_operator,
@@ -102,6 +103,8 @@ class TreeWalker(object):
             'include_statement': self.include_statement,
             'function_statement': self.function_statement,
             'if_statement': self.if_statement,
+            'elseif_statement': self.elseif_statement,
+            'else_statement': self.else_statement,
             'content': self.content,
             'comment': self.function_statement,
             'print_statement': self.print_statement,
@@ -146,7 +149,7 @@ class TreeWalker(object):
 
         code = "%s%s" % (code, self.__walk_tree(self.language_handler, ast, ""))
         
-        return "%s<? captureEnd('%s'); ?>" % (code, name)
+        return "%s<? $%s = captureEnd('%s'); ?>" % (code, name, name)
 
     def math_statement(self, ast, code):
         return code
@@ -428,41 +431,32 @@ class TreeWalker(object):
             'capitalize': self.capitalize,
             'local_date': self.local_date,
             'variable_string': self.variable_string,
+            'modifier_param': self.modifier_param
         }
 
         return self.__walk_tree(handler, ast, code)
 
-    def regex_replace(self, ast, code):
-        params = []
-        for k, v in ast:
-            method = getattr(self, k)
-            params.append(method(v, ""))
+    def modifier_param(self, ast, code):
+        handler = {
+            'colon_operator': self.colon_operator,
+            'expression': self.expression
+        }
+        return "%s)" % self.__walk_tree(handler, ast, code)
 
-        return "regex_replace(%s, %s)" % (code, ', '.join(params))
+    def regex_replace(self, ast, code):
+        return "regex_replace(%s" % code
 
     def truncate(self, ast, code):
-        params = []
-        for k, v in ast:
-            method = getattr(self, k)
-            params.append(method(v, ""))
-
-        return "truncate(%s, %s)" % (code, ', '.join(params))
+        return "truncate(%s" % code
 
     def escape(self, ast, code):
-        escape_type = self.__walk_tree(self.expression_handler, ast, "")
-
-        if escape_type:
-           code = "%s, %s" % (code, escape_type)
-        else:
-           code = "%s" % code
-
-        return "escape(%s)" % code
+        return "escape(%s" % code
 
     def lower(self, ast, code):
         return "lower(%s)" % self.__walk_tree(self.expression_handler, ast, code)
 
     def count(self, ast, code):
-        return "@count(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+        return "count(%s)" % self.__walk_tree(self.expression_handler, ast, code)
 
     def capitalize(self, ast, code):
         return "capitalize(%s)" % self.__walk_tree(self.expression_handler, ast, code)
@@ -474,10 +468,10 @@ class TreeWalker(object):
         return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, code)
 
     def wordbreak(self, ast, code):
-        return "wordbreak(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+        return "wordbreak(%s" % self.__walk_tree(self.expression_handler, ast, code)
 
     def local_date(self, ast, code):
-        return "local_date(%s)" % self.__walk_tree(self.expression_handler, ast, code)
+        return "local_date(%s" % self.__walk_tree(self.expression_handler, ast, code)
 
     def php_obj(self, ast, code):
         uri_handler = {
@@ -637,10 +631,10 @@ class TreeWalker(object):
     """        
     def elseif_statement(self, ast, code):
 
-        code = "%s<? elseif(" % code
+        code = "%s<? elseif (" % code
 
         # Walking the expressions in an elseif statement.
-        code = "%s): ?>" % self.__walk_tree (self.param_handler, ast, code)
+        code = "%s): ?>" % self.rreplace(self.__walk_tree (self.param_handler, ast, code), ',', '', 1)
 
         return self.__walk_tree (self.language_handler, ast, code)
 
@@ -659,6 +653,12 @@ class TreeWalker(object):
     def operator(self, ast, code):
         # Evaluate the different types of expressions.
         return self.__walk_tree(self.operator_handler, ast, code)
+
+    """
+    : operator in Smarty. Converts to , for parameters in modifier functions
+    """
+    def colon_operator(self, ast, code):
+        return '%s, ' % code
             
     """
     >= operator in Smarty.
@@ -848,13 +848,7 @@ class TreeWalker(object):
     {foo|default:""}
     """
     def default(self, ast, code):
-        prefix = ''
-        default_val = self.__walk_tree(self.expression_handler, ast, "")
-
-        if default_val:
-            return "%scheck(%s, %s)" % (prefix, code, default_val)
-        else:
-            return "%scheck(%s)" % (prefix, code)
+        return "check(%s" % code
 
     """
     Boolean values in Smarty 

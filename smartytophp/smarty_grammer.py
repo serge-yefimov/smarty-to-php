@@ -78,15 +78,15 @@ def not_operator():             return '!'
 
 def at_operator():              return '@'
 
+def colon_operator():           return ':'
+
+def bar_operator():             return '|'
+
 def symbol():                   return -1, [' ', '\n', '\t'], 0, [not_operator, at_operator], 0, dollar, re.compile(r'[\w\-\+\_]+(?<!-)')
 
 def array():                    return symbol, "[", 0, expression, "]"
 
 def exp_no_modifier():          return [object_dereference, static_call, php_fun, boolean, array, symbol, variable_string, string]
-
-def modifier():                 return [static_call, php_fun, object_dereference, boolean, array, symbol, variable_string, string], -2, modifier_right, 0, junk
-
-def modifier_right():           return '|', 0, at_operator, [default, count, truncate, local_date, lower, count, upper, capitalize, urldecode, regex_replace, escape, wordbreak, symbol], -1, (':', exp_no_modifier)
 
 def object_dereference():       return [array, symbol], -2, [assignment_op, dereference]
 
@@ -108,9 +108,15 @@ def static_call():              return junk, -1, [operator, not_operator],  doll
 
 def expression():               return [modifier, static_call, object_dereference, php_fun, function_statement, array, symbol, string, variable_string]
 
-def default():                  return keyword('default'), ':', expression
+def modifier():                 return [static_call, php_fun, object_dereference, boolean, array, symbol, variable_string, string], -2, modifier_right, 0, junk
 
-def escape():                   return keyword('escape'), 0, ':', 0, expression
+def modifier_right():           return bar_operator, 0, at_operator, [default, count, truncate, local_date, lower, count, upper, capitalize, urldecode, regex_replace, escape, wordbreak, symbol], 0, modifier_param
+
+def modifier_param():           return colon_operator, expression, -1, (colon_operator, expression)
+
+def default():                  return keyword('default')
+
+def escape():                   return keyword('escape')
 
 def urldecode():                return keyword("urldecode")
 
@@ -122,11 +128,11 @@ def upper():                    return keyword("upper")
 
 def capitalize():               return keyword("capitalize")
 
-def regex_replace():            return keyword("regex_replace"), ':', expression, ':', expression
+def regex_replace():            return keyword("regex_replace")
 
-def truncate():                 return keyword("truncate"), ':', expression, 0, ':', 0, expression
+def truncate():                 return keyword("truncate")
 
-def wordbreak():                return keyword("wordbreak"), 0, ':', 0, expression
+def wordbreak():                return keyword("wordbreak")
 
 def local_date():               return keyword("local_date")
 
@@ -135,11 +141,11 @@ Smarty statements.
 """
 def parameter():                return junk, -1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren, -1, (-1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren), junk
 
-def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, -1, [else_statement, elseif_statement], '{/', keyword('if'), '}'
+def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, '{/', keyword('if'), '}'
 
-def elseif_statement():         return '{', keyword('elseif'), -2, parameter, '}', -1, smarty_language
+def elseif_statement():         return junk, '{', keyword('elseif'), -2, parameter, '}', -1, smarty_language
 
-def else_statement():           return '{', keyword('else'), '}', -1, smarty_language
+def else_statement():           return junk, '{', keyword('else'), '}', -1, smarty_language
 
 def for_from():                 return junk, keyword('from'), equals, [php_obj, php_fun, expression], junk
 
@@ -202,7 +208,7 @@ def translate():                return '{', keyword('t'), 0, translate_params, '
 """
 Finally, the actual language description.
 """
-def smarty_language():          return -2, [literal, strip, if_statement, for_statement, curi_statement, buri_statement, uri_statement, wiki_statement, guri_statement, assign_statement, translate, comment, include_statement, capture_statement, print_statement, content]
+def smarty_language():          return -2, [literal, strip, if_statement, elseif_statement, else_statement, for_statement, curi_statement, buri_statement, uri_statement, wiki_statement, guri_statement, assign_statement, translate, comment, include_statement, capture_statement, print_statement, content]
 
 """
 print_trace = True

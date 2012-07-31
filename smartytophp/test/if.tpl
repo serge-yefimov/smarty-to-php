@@ -20,9 +20,10 @@
    <a id="acceptAnswer-{$post->postid}" class="muted toggleAcceptLink" 
    data-postid="{$post->postid}">
     {if $accepted}{t}Unaccept Answer{/t}{else}{t}Accept Answer{/t}{/if}</a>
+{elseif $search}
+   {t}Hello world{/t}
 {/if}
 
  {if $question->blurb->is_discussion && $static->call('ServerConstants',
  'enabled', 'feature-answers-is-discussion')}{/if}
 
- {if $post->blurbs.questions|@count > 0}{/if}

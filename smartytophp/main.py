@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-import os, optparse, sys, fileinput
+import os, optparse, sys, fileinput, subprocess
 from tree_walker import TreeWalker
 from smarty_grammer import smarty_language
 from pyPEG import parse, parseLine, parser
@@ -75,8 +75,16 @@ def main():
 
     print options, args
 
-    if options.smarty and options.phtml:
-        convert(options.smarty, options.phtml)
+    input_filename = output_filename = ''
+    if options.smarty:
+        input_filename = options.smarty
+        if options.phtml:
+            output_filename = options.phtml
+        else:
+            output_filename = os.path.join(os.path.dirname(options.smarty), os.path.splitext(options.smarty)[0]+output_file_type)
+
+        convert(input_filename, output_filename)
+        #subprocess.call(['vim', '-O', options.smarty, options.phtml])
     elif options.directory:
         for dirname, dirnames, filenames in os.walk(options.directory):
             for subdirname in dirnames:
@@ -85,7 +93,8 @@ def main():
                 if filename.endswith('.tpl'):
                     output_filename = os.path.join(dirname, os.path.splitext(filename)[0]+output_file_type)
                     if not os.path.exists(output_filename):
-                        convert(os.path.join(dirname, filename), output_filename)
+                        input_filename = os.path.join(dirname, filename)
+                        convert(input_filename, output_filename)
                     else:
                         print "File "+output_filename+" Exists, skipping..."
 

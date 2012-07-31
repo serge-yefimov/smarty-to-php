@@ -7,4 +7,5 @@
 <td>{$item->action|regex_replace:"/_/":" "|lower|capitalize}
 {$item|lower}
 {$item|lower|capitalize}
+{$item|escape:'html'}
 
