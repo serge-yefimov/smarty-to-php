@@ -90,15 +90,24 @@ def main():
             for subdirname in dirnames:
                 print os.path.join(dirname, subdirname)
             for filename in filenames:
+                input_filename = os.path.join(dirname, filename)
                 if filename.endswith('.tpl'):
                     output_filename = os.path.join(dirname, os.path.splitext(filename)[0]+output_file_type)
                     if not os.path.exists(output_filename):
-                        input_filename = os.path.join(dirname, filename)
+                        print "Converting " + input_filename + "..." 
                         convert(input_filename, output_filename)
                     else:
                         print "File "+output_filename+" Exists, skipping..."
 
 def convert(input_file, output_file):
+    if os.stat(input_file)[6] == 0:
+        print "Empty File " + output_file
+        f = open(output_file, 'w+')
+        f.write("<? /* Empty File */ ?>");
+        f.close()
+        print 'Template outputted to %s' % output_file
+        return 
+
     # Parse the file into tokens
     ast = parse_file(input_file)
 

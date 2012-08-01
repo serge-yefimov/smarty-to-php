@@ -129,7 +129,7 @@ class TreeWalker(object):
         stripped = stripped.replace('{/strip}', '')
         stripped = stripped.replace('{strip}', '')
         
-        return "%strim(%s)" % (code, stripped)
+        return "%s%s" % (code, stripped)
 
     def capture_assign(self, ast, code):
         return "%s$%s" % (code, self.__walk_tree(self.symbol_handler, ast, ""))

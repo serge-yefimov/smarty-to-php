@@ -17,6 +17,7 @@ def comment():                  return re.compile("{\*.*?\*}", re.S)
 
 def literal():                  return re.compile("{literal}.*?{/literal}", re.S)
 
+#def strip():                    return junk, re.compile("{strip}", re.S), -1, smarty_language, re.compile("{/strip}", re.S), junk
 def strip():                    return re.compile("{strip}.*?{/strip}", re.S)
 
 def junk():                     return -1, re.compile(r'\s')
