@@ -103,7 +103,7 @@ def convert(input_file, output_file):
     if os.stat(input_file)[6] == 0:
         print "Empty File " + output_file
         f = open(output_file, 'w+')
-        f.write("<? /* Empty File */ ?>");
+        f.write("<? /* Empty File */ ?>\n");
         f.close()
         print 'Template outputted to %s' % output_file
         return 
