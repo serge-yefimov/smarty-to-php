@@ -1,5 +1,5 @@
 import re
-import pprint
+import pprint, shlex
 
 """
 Takes an AST of a parsed smarty program
@@ -820,18 +820,49 @@ class TreeWalker(object):
 
         return code
 
-    def translate_params(self, ast, code):
-        p_list = re.sub("[0-9]+\=", "", ast[1]).split(' ')
+    def translate_params(self, ast, singular):
+        count = plural = ''
+        if 1 < len(ast[0][1][1]):
+            params_stripped = re.sub("[0-9]+\=", "", ast[0][1][1])
+        else:
+            params_stripped = re.sub("[0-9]+\=", "", ast[1])
+
+        p_list = shlex.split(params_stripped.decode('ascii', 'ignore'))
+        p_list = [re.sub("\x00", "", item) for item in p_list]
+
         for i, item in enumerate(p_list):
-            if (item.startswith('&') and item.endswith(';')) or (item.startswith('<') and item.endswith('>')):
+            if (item.startswith('plural=')):
+                plural = item.replace('plural=', '')
+                p_list.pop(i)
+            elif (item.startswith('count=')): 
+                count = item.replace('count=', '')
+                p_list.pop(i)
+            elif (item.startswith('&') and item.endswith(';')) or (item.startswith('<') and item.endswith('>')):
                 p_list[i] = "\"%s\"" % item
-                
+
         params = ', '.join(p_list)
-        return "%s, %s" % (code, params)
+                
+        if count and plural:
+            return ("%s, \"%s\", \"%s\", %s" % (count, singular, plural, params)), True
+        else:
+            return ("\"%s\", %s" % (singular, params)), False
 
     def translate(self, ast, code):
-        params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
-        return "%s <?= ___(\"%s\"%s) ?>" % (code, self.__walk_tree(self.language_handler, ast, ""), params)
+        is_plural = False
+        params = singular = ''
+
+        if ast[0][0] == 'translate_params':
+            singular = self.__walk_tree(self.language_handler, ast, "")
+            params, is_plural = self.translate_params(ast, singular)
+            #print params, is_plural
+        #params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
+            if is_plural:
+                return "%s <?= ___p(%s) ?>" % (code, params)
+            else:
+                return "%s <?= ___(%s) ?>" % (code, params)
+        else:
+            t_string = self.__walk_tree(self.language_handler, ast, "")
+            return "%s <?= ___(\"%s\") ?>" % (code, t_string)
 
     """
     A string in Smarty.
