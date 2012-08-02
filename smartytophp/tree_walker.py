@@ -349,7 +349,7 @@ class TreeWalker(object):
         if not args == '':
             args = "%s)" % self.rreplace(args, ',', '', 1)
 
-        return "%s <?= $this->fetch(%s%s); ?>" % (code, filename, args)
+        return "%s<?= $this->fetch(%s%s); ?>" % (code, filename, args)
 
     """
     Smarty functions are mapped to a modifier in
@@ -857,12 +857,12 @@ class TreeWalker(object):
             #print params, is_plural
         #params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
             if is_plural:
-                return "%s <?= ___p(%s) ?>" % (code, params)
+                return "%s<?= ___p(%s) ?>" % (code, params)
             else:
-                return "%s <?= ___(%s) ?>" % (code, params)
+                return "%s<?= ___(%s) ?>" % (code, params)
         else:
             t_string = self.__walk_tree(self.language_handler, ast, "")
-            return "%s <?= ___(\"%s\") ?>" % (code, t_string)
+            return "%s<?= ___(\"%s\") ?>" % (code, t_string)
 
     """
     A string in Smarty.
