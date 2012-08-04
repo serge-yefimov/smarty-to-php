@@ -17,8 +17,7 @@ def comment():                  return re.compile("{\*.*?\*}", re.S)
 
 def literal():                  return re.compile("{literal}.*?{/literal}", re.S)
 
-#def strip():                    return junk, re.compile("{strip}", re.S), -1, smarty_language, re.compile("{/strip}", re.S), junk
-def strip():                    return re.compile("{strip}.*?{/strip}", re.S)
+def strip():                    return '{', keyword('strip'), '}', junk, -1, smarty_language, junk, '{', '/', keyword('strip'), '}'
 
 def junk():                     return -1, re.compile(r'\s')
 
@@ -33,6 +32,10 @@ def period():                   return '.'
 def right_paren():              return junk, ')'
 
 def left_paren():               return junk, '('
+
+def right_bracket():            return ']'
+
+def left_bracket():             return '['
 
 def dollar():                   return '$'
 
@@ -94,7 +97,7 @@ def exp_no_modifier():          return [object_dereference, static_call, php_fun
 
 def object_dereference():       return [array, symbol], -2, [assignment_op, dereference]
 
-def dereference():              return '.', [symbol, array, object_dereference, string, variable_string]
+def dereference():              return '.', [symbol, variable_string, string], 0, left_bracket, 0, expression, 0, right_bracket
 
 def assignment_op():            return arrow, [symbol, object_dereference], 0, left_paren, 0, expression, -1, (',', expression), 0, right_paren, 0, junk
 
@@ -113,37 +116,16 @@ def static_param():             return junk, expression, junk
 
 def static_call():              return junk, -1, [operator, not_operator],  dollar, keyword('static'), arrow, keyword('call'), left_paren, static_class, ',', static_function, -1, (',', static_param), right_paren, junk
 
-
 """
 Modifier Statements and Functions
 """
 def modifier():                 return [static_call, php_fun, object_dereference, boolean, array, symbol, variable_string, string], -2, modifier_right, 0, junk
 
-def modifier_right():           return bar_operator, 0, at_operator, [default, count, truncate, local_date, lower, count, upper, capitalize, urldecode, regex_replace, escape, wordbreak, symbol], 0, modifier_param
+def modifier_right():           return bar_operator, 0, at_operator, symbol, 0, modifier_param
 
 def modifier_param():           return colon_operator, expression, -1, (colon_operator, expression)
 
 def default():                  return keyword('default')
-
-def escape():                   return keyword('escape')
-
-def urldecode():                return keyword("urldecode")
-
-def lower():                    return keyword("lower")
-
-def count():                    return keyword("count")
-
-def upper():                    return keyword("upper")
-
-def capitalize():               return keyword("capitalize")
-
-def regex_replace():            return keyword("regex_replace")
-
-def truncate():                 return keyword("truncate")
-
-def wordbreak():                return keyword("wordbreak")
-
-def local_date():               return keyword("local_date")
 
 """
 Base Expression
@@ -157,9 +139,9 @@ def parameter():                return junk, -1, [operator, not_operator, at_ope
 
 def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, '{/', keyword('if'), '}'
 
-def elseif_statement():         return junk, '{', keyword('elseif'), -2, parameter, '}', -1, smarty_language
+def elseif_statement():         return '{', keyword('elseif'), -2, parameter, '}', -1, smarty_language
 
-def else_statement():           return junk, '{', keyword('else'), '}', -1, smarty_language
+def else_statement():           return '{', keyword('else'), '}', -1, smarty_language
 
 def for_from():                 return junk, keyword('from'), equals, [php_obj, php_fun, expression], junk
 
@@ -169,7 +151,7 @@ def for_name():                 return junk, keyword('name'), equals, quotes, sy
 
 def for_key():                  return junk, keyword('key'), equals, quotes, symbol, quotes, junk
 
-def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_item, for_name, for_key], '}', -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
+def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_item, for_name, for_key], '}', junk, -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
 
 def foreachelse_statement():    return '{', keyword('foreachelse'), '}', -1, smarty_language
 
@@ -210,19 +192,16 @@ def guri_statement():           return '{', keyword('GURI'), -2, uri_param, '}'
 
 def wiki_statement():           return '{', keyword('WIKI'), -2, uri_param, '}'
 
-def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\:\;\=\+\-\.\_\$\%\<\>\/\'\"\| ]+'), junk
+def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\:\;\=\+\-\.\#\_\$\%\<\>\/\'\"\| ]+'), junk
 
 def translate():                return '{', keyword('t'), 0, translate_params, '}', -2, smarty_language, '{/', keyword('t'), '}'
+
+def status_params():            return junk, symbol, equals, [file_path, expression], junk
+
+def status():                   return '{', keyword('status'), -1, status_params, '}', junk, -1, smarty_language, junk, '{', '/', keyword('status'), '}'
 
 """
 Finally, the actual language description.
 """
-def smarty_language():          return -2, [literal, strip, if_statement, elseif_statement, else_statement, for_statement, curi_statement, buri_statement, uri_statement, wiki_statement, guri_statement, assign_statement, translate, comment, include_statement, capture_statement, print_statement, content]
+def smarty_language():          return -2, [literal, strip, status, if_statement, elseif_statement, else_statement, for_statement, curi_statement, buri_statement, uri_statement, wiki_statement, guri_statement, assign_statement, translate, comment, include_statement, capture_statement, print_statement, content]
 
-"""
-print_trace = True
-
-files = fileinput.input()
-result = parse(smarty_language(), files, True, comment)
-print result
-"""

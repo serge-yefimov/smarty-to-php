@@ -19,6 +19,6 @@ This weeks meeting is in {$meetingPlace}.
 {$Contacts.phone.cell.iphone|default:false}<br />
 {$Contacts.phone.cell.iphone|escape:'html'}<br />
 
-{$post->blurbs.questions}
+{$post->blurbs.questions[0]}
 
 <input type="text" name="search" value="{$aConf->search|escape}" />

@@ -8,4 +8,4 @@
 {$item|lower}
 {$item|lower|capitalize}
 {$item|escape:'html'}
-
+<span class="blurbImageStatNum">{$bData.stats.topics.total|nice_number}</span>

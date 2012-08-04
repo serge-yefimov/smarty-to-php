@@ -1,0 +1,1 @@
+{$story.images[0]}

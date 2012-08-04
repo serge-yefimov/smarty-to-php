@@ -17,10 +17,10 @@ class TreeWalker(object):
     }
     
     keywords = {
-        'foreachelse': '<? else: ?>',
+        'foreachelse': '<? endforeach; else: ?>',
         'else': '<? else: ?>',
-        'rdelim': '{rdelim}',
-        'ldelim': '{ldelim}'
+        'rdelim': '{',
+        'ldelim': '}'
     }
 
     """
@@ -75,6 +75,23 @@ class TreeWalker(object):
         
         # Top level handler for walking the tree.
         self.code = self.smarty_language(ast, '')        
+    """
+    Tree walking helper function.
+    """
+    def __walk_tree_reversed(self, handlers, ast, code):
+        for k, v in ast[::-1]:
+            if handlers.has_key(k):
+                if k == 'comment':
+                    # Comments in php have <? /* not {*
+                    code = "%s<? /* %s */ ?>" % (
+                        code,
+                        # value between {* and *}
+                        v[2:len(v) - 2]
+                    )
+                else:
+                    code = handlers[k](v, code)
+                
+        return code
 
     """
     Tree walking helper function.
@@ -102,6 +119,7 @@ class TreeWalker(object):
         handler = {
             'include_statement': self.include_statement,
             'function_statement': self.function_statement,
+            'status': self.status,
             'if_statement': self.if_statement,
             'elseif_statement': self.elseif_statement,
             'else_statement': self.else_statement,
@@ -124,12 +142,37 @@ class TreeWalker(object):
         
         return self.__walk_tree(handler, ast, code)
 
+    def status(self, ast, code):
+        handler = {
+            'expression': self.expression,
+            'file_path': self.file_path
+        }
+
+        code = "%s <? captureStart('CHANGE_ME'); %s <? $CHANGE_ME = captureEnd('CHANGE_ME'); ?>" % (code, self.__walk_tree(self.language_handler, ast, ""))
+
+        params = {}
+        args = filename = ''
+        for k, v in ast:
+            if k == 'status_params':
+                symbol = self.__walk_tree(self.symbol_handler, v, "")
+                expression = self.__walk_tree(handler, v, "")
+                params[symbol] = expression
+
+        if len(params) > 1:
+            args = ", array("
+
+        for k, v in params.items():
+            args += '"%s"=>%s, ' % (k, v)
+                
+        # if there are args, remove the trailing `,` from the array
+        if not args == '':
+            args = "%s)" % self.rreplace(args, ', ', '', 1)
+
+        return "%s<?= $this->addStatus(%s%s); ?>" % (code, "$CHANGE_ME", args)
+
+
     def strip(self, ast, code):
-        stripped = ast
-        stripped = stripped.replace('{/strip}', '')
-        stripped = stripped.replace('{strip}', '')
-        
-        return "%s%s" % (code, stripped)
+        return self.__walk_tree(self.language_handler, ast, code)
 
     def capture_assign(self, ast, code):
         return "%s$%s" % (code, self.__walk_tree(self.symbol_handler, ast, ""))
@@ -243,6 +286,12 @@ class TreeWalker(object):
     def rparen(self, ast, code):
         return '%s)' % code
 
+    def lbracket(self, ast, code):
+        return '%s[' % code
+
+    def rbracket(self, ast, code):
+        return '%s]' % code
+
     def php_param(self, ast, code):
         return code
 
@@ -347,7 +396,7 @@ class TreeWalker(object):
                 
         # if there are args, remove the trailing `,` from the array
         if not args == '':
-            args = "%s)" % self.rreplace(args, ',', '', 1)
+            args = "%s)" % self.rreplace(args, ', ', '', 1)
 
         return "%s<?= $this->fetch(%s%s); ?>" % (code, filename, args)
 
@@ -396,18 +445,19 @@ class TreeWalker(object):
     """
     def modifier(self, ast, code):
         modifier_handler = {
+            'modifier_right': self.modifier_right,
             'symbol': self.symbol,
             'array': self.array,
             'string': self.string,
             'variable_string': self.variable_string,
             'object_dereference': self.object_dereference,
-            'modifier_right': self.modifier_right,
             'static_call': self.static_call,
             'php_fun': self.php_fun
         }
                 
         # Walking the expression that starts a modifier statement.
-        return self.__walk_tree(modifier_handler, ast, code)
+        variable = self.__walk_tree(modifier_handler, ast, "")
+        return "%s%s" % (code, variable)
         
     """
     The right-hand side of the modifier
@@ -416,62 +466,29 @@ class TreeWalker(object):
     bar:a:b:c
     """
     def modifier_right(self, ast, code):
-        handler = {
-            'symbol': self.symbol,
-            'default': self.default,
-            'string': self.string,
-            'escape': self.escape,
-            'wordbreak': self.wordbreak,
-            'urldecode': self.urldecode,
-            'regex_replace': self.regex_replace,
-            'truncate': self.truncate,
-            'lower': self.lower,
-            'count': self.count,
-            'upper': self.upper,
-            'capitalize': self.capitalize,
-            'local_date': self.local_date,
-            'variable_string': self.variable_string,
-            'modifier_param': self.modifier_param
-        }
+        handler = { 'symbol': self.symbol, }
+        modifier_param_handler = { 'modifier_param': self.modifier_param }
 
-        return self.__walk_tree(handler, ast, code)
+        function_name = self.__walk_tree(handler, ast, "")
+        params = self.__walk_tree(modifier_param_handler, ast, "")
+
+        if function_name == "default":
+            function_name = "check"
+
+        if params:
+            return "%s(%s%s" % (function_name, code, params)
+        else:
+            return "%s(%s)" % (function_name, code)
 
     def modifier_param(self, ast, code):
         handler = {
             'colon_operator': self.colon_operator,
             'expression': self.expression
         }
-        return "%s)" % self.__walk_tree(handler, ast, code)
 
-    def regex_replace(self, ast, code):
-        return "regex_replace(%s" % code
+        modifier_param = self.__walk_tree(handler, ast, "")
+        return "%s%s)" % (code, modifier_param)
 
-    def truncate(self, ast, code):
-        return "truncate(%s" % code
-
-    def escape(self, ast, code):
-        return "escape(%s" % code
-
-    def lower(self, ast, code):
-        return "lower(%s)" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def count(self, ast, code):
-        return "count(%s)" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def capitalize(self, ast, code):
-        return "capitalize(%s)" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def upper(self, ast, code):
-        return "upper(%s)" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def urldecode(self, ast, code):
-        return "urldecode(%s)" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def wordbreak(self, ast, code):
-        return "wordbreak(%s" % self.__walk_tree(self.expression_handler, ast, code)
-
-    def local_date(self, ast, code):
-        return "local_date(%s" % self.__walk_tree(self.expression_handler, ast, code)
 
     def php_obj(self, ast, code):
         uri_handler = {
@@ -485,6 +502,9 @@ class TreeWalker(object):
         return self.__walk_tree(uri_handler, ast, code)
 
     def uri(self, ast, code, base_class):
+        method_name = args = ''
+        need_quotes = ['mini', 'thumbnail', 'medium', 'huge', 'original']
+
         uri_handler = {
             'expression': self.expression,
             'file_path': self.file_path,
@@ -492,9 +512,6 @@ class TreeWalker(object):
             'arrow': self.arrow,
             'dollar': self.dollar
         }
-
-        method_name = args = ''
-
         code = "%s<?= %s" % (code, base_class)
         i = 0
         for k, v in ast:
@@ -503,7 +520,10 @@ class TreeWalker(object):
             if i == 0:
                 code = "%s%s(%s, " % (code, key, value)
             else:
-                code = "%s%s, " % (code, value)
+                if value in need_quotes:
+                    code = "%s'%s', " % (code, value)
+                else:
+                    code = "%s%s, " % (code, value)
             i += 1
 
         return "%s) ?> " % self.rreplace(code, ', ', '', 1)
@@ -605,7 +625,7 @@ class TreeWalker(object):
         # Walking the expressions in an if statement.
         code = self.__walk_tree (self.param_handler, ast, code)
         
-        code = "%s): ?>" % self.rreplace(code, ',', '', 1)
+        code = "%s): ?>" % self.rreplace(code, ', ', '', 1)
          
         # The content inside the if statement.
         code = self.__walk_tree (self.language_handler, ast, code)
@@ -634,7 +654,7 @@ class TreeWalker(object):
         code = "%s<? elseif (" % code
 
         # Walking the expressions in an elseif statement.
-        code = "%s): ?>" % self.rreplace(self.__walk_tree (self.param_handler, ast, code), ',', '', 1)
+        code = "%s): ?>" % self.rreplace(self.__walk_tree (self.param_handler, ast, code), ', ', '', 1)
 
         return self.__walk_tree (self.language_handler, ast, code)
 
@@ -726,24 +746,21 @@ class TreeWalker(object):
     encompassed in the expression type.
     """
     def expression(self, ast, code):
+
+        handler = {
+            'modifier': self.modifier,
+            'static_call': self.static_call,
+            'object_dereference': self.object_dereference,
+            'php_fun': self.php_fun,
+            'function_statement': self.function_statement,
+            'array': self.array,
+            'symbol': self.symbol,
+            'string': self.string,
+            'variable_string': self.variable_string
+        }
+
         # Evaluate the different types of expressions.
-        expression = self.__walk_tree (
-            {
-                'symbol': self.symbol,
-                'string': self.string,
-                'variable_string': self.variable_string,
-                'object_dereference': self.object_dereference,
-                'function_statement': self.function_statement,
-                'php_fun': self.php_fun,
-                'static_call': self.static_call,
-                'array': self.array,
-                'modifier': self.modifier
-            },
-            ast,
-            ""
-        )
-        
-        #print "expression:",expression
+        expression = self.__walk_tree (handler, ast, "")
         
         # Should we perform any replacements?
         for k, v in self.replacements.items():
@@ -760,19 +777,20 @@ class TreeWalker(object):
     """
     def object_dereference(self, ast, code):
         handlers = {
-            'expression': self.expression,
-            'symbol': self.symbol,
-            'string': self.string,
-            'variable_string': self.variable_string,
-            'dereference': self.dereference,
-            'assignment_op': self.assignment_op,
-            'array': self.array
+            'array': self.array,
+            'symbol': self.symbol
         }
 
-        for k, v in ast:
-            code = "%s%s" % (code, handlers[k](v, ""))
+        object_handler = {
+            'assignment_op': self.assignment_op,
+            'dereference': self.dereference
+        }
 
-        return code
+        base = self.__walk_tree(handlers, ast, "")
+
+        dereference = self.__walk_tree(object_handler, ast, "")
+
+        return "%s%s%s" % (code, base, dereference)
 
     def assignment_op(self, ast, code):
         handlers = {
@@ -785,14 +803,20 @@ class TreeWalker(object):
         return self.__walk_tree(handlers, ast, code)
 
     def dereference(self, ast, code):
-        object_handlers = {
-            'expression': self.expression,
-            'symbol': self.symbol,
+        object_handlers = { 
+            'symbol': self.symbol, 
+            'variable_string': self.variable_string, 
             'string': self.string,
-            'variable_string': self.variable_string,
-            'array': self.array
         }
-        return "[\'%s\']" % self.__walk_tree(object_handlers, ast, "")
+
+        code = "%s[\'%s\']" % (code, self.__walk_tree(object_handlers, ast, ""))
+
+        array_handler = {
+            'left_bracket': self.lbracket,
+            'right_bracket': self.rbracket,
+            'expression': self.expression
+        }
+        return "%s%s" % (code, self.__walk_tree(array_handler, ast, ""))
         
     """
     An array expression in Smarty:
@@ -854,8 +878,6 @@ class TreeWalker(object):
         if ast[0][0] == 'translate_params':
             singular = self.__walk_tree(self.language_handler, ast, "")
             params, is_plural = self.translate_params(ast, singular)
-            #print params, is_plural
-        #params = self.__walk_tree({'translate_params': self.translate_params}, ast, "")
             if is_plural:
                 return "%s<?= ___p(%s) ?>" % (code, params)
             else:

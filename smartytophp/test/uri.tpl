@@ -1,4 +1,6 @@
 {GURI viewQuestion=$question->postid commentid=$comment->commentid}
+{$story.images[0]}
+{GURI guideImageid=$story.images[0] size=medium}
 href="{GURI postHistory=$post->postid}">{t}Edited by{/t}</a>
 {GURI askAboutDevice=$aConf->getDevice()}
 {GURI css=$stylesheet}
