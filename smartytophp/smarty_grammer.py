@@ -97,7 +97,7 @@ def exp_no_modifier():          return [object_dereference, static_call, php_fun
 
 def object_dereference():       return [array, symbol], -2, [assignment_op, dereference]
 
-def dereference():              return '.', [symbol, variable_string, string], 0, left_bracket, 0, expression, 0, right_bracket
+def dereference():              return '.', [array, symbol, variable_string, string]
 
 def assignment_op():            return arrow, [symbol, object_dereference], 0, left_paren, 0, expression, -1, (',', expression), 0, right_paren, 0, junk
 
@@ -151,7 +151,7 @@ def for_name():                 return junk, keyword('name'), equals, quotes, sy
 
 def for_key():                  return junk, keyword('key'), equals, quotes, symbol, quotes, junk
 
-def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_key, for_item, for_name], '}', -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
+def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_key, for_item, for_name], '}', junk, -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
 
 def foreachelse_statement():    return '{', keyword('foreachelse'), '}', -1, smarty_language
 

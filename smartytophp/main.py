@@ -84,7 +84,7 @@ def main():
             output_filename = os.path.join(os.path.dirname(options.smarty), os.path.splitext(options.smarty)[0]+output_file_type)
 
         convert(input_filename, output_filename)
-        #subprocess.call(['vim', '-O', options.smarty, options.phtml])
+        subprocess.call(['vim', '-O', options.smarty, options.phtml])
     elif options.directory:
         for dirname, dirnames, filenames in os.walk(options.directory):
             for subdirname in dirnames:

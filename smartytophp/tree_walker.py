@@ -806,6 +806,7 @@ class TreeWalker(object):
     def dereference(self, ast, code):
         object_handlers = { 
             'symbol': self.symbol, 
+            'array': self.array, 
             'variable_string': self.variable_string, 
             'string': self.string,
         }
