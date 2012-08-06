@@ -349,9 +349,6 @@ def parse(language, lineSource, skipWS = True, skipComments = None, packrat = Fa
         lineCont = orig.splitlines()[nn]
         time = strftime("%a, %d %b %Y %H:%M:%S +0000", localtime())
 
-        f = open('convert_log', 'a')
-        f.write("("+time+") " + u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont + '\n')
-        f.close()
         print "Error in " + u(file) + " on statement " + lineCont
         subprocess.call(['vim', '-c', "+"+str(lineNo), lineSource.filename()])
         raise SyntaxError(u"syntax error in " + u(file) + u":" + u(lineNo) + u": " + lineCont)
