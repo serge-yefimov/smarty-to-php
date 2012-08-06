@@ -151,7 +151,7 @@ def for_name():                 return junk, keyword('name'), equals, quotes, sy
 
 def for_key():                  return junk, keyword('key'), equals, quotes, symbol, quotes, junk
 
-def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_item, for_name, for_key], '}', junk, -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
+def for_statement():            return '{', keyword('foreach'), -2, [for_from, for_key, for_item, for_name], '}', -1, smarty_language, 0, foreachelse_statement, '{/', keyword('foreach'), '}'
 
 def foreachelse_statement():    return '{', keyword('foreachelse'), '}', -1, smarty_language
 
