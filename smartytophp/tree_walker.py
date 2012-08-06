@@ -19,8 +19,8 @@ class TreeWalker(object):
     keywords = {
         'foreachelse': '<? endforeach; else: ?>',
         'else': '<? else: ?>',
-        'rdelim': '{',
-        'ldelim': '}'
+        'rdelim': '}',
+        'ldelim': '{'
     }
 
     """

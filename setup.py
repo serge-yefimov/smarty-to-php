@@ -14,9 +14,6 @@ setup(
     author_email="tim@ifixit.com",
     packages=['smartytophp'],
     url="git@github.com:ifixit/smarty-to-php.git",
-    entry_points={
-        'console_scripts': [ 'smartytophp = smartytophp.main:main' ],
-    },
     description="Converts Smarty templates into PHP templates. Heavily modified fork of FreshBooks SmartyToTwig.",
     long_description=open('README.md').read()
 )

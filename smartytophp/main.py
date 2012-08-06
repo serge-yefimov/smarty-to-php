@@ -67,10 +67,19 @@ def main():
         help="Directory to scan and parse the templates."
     )
 
-    parser = optparse.OptionParser(usage='smartytophp --smarty-file=<SOURCE TEMPLATE> --phtml-file=<OUTPUT TEMPLATE> OR --directory=<SOURCE / OUTPUT DIRECTORY>')
+    opt4 = optparse.make_option(
+        "-v",
+        "--vim",
+        action="store_true",
+        dest="vim_split",
+        help="Open the original and parsed files split in VIM."
+    )
+
+    parser = optparse.OptionParser(usage='smartytophp --smarty-file=<SOURCE TEMPLATE> --phtml-file=<OUTPUT TEMPLATE> OR --directory=<SOURCE / OUTPUT DIRECTORY> OR --vim')
     parser.add_option(opt1)
     parser.add_option(opt2)
     parser.add_option(opt3)
+    parser.add_option(opt4)
     (options, args) = parser.parse_args(sys.argv)
 
     print options, args
@@ -81,10 +90,13 @@ def main():
         if options.phtml:
             output_filename = options.phtml
         else:
-            output_filename = os.path.join(os.path.dirname(options.smarty), os.path.splitext(options.smarty)[0]+output_file_type)
+            dirpath = os.path.dirname(options.smarty)
+            filename = os.path.basename(os.path.splitext(options.smarty)[0])+output_file_type
+            output_filename = os.path.join(dirpath, filename)
 
         convert(input_filename, output_filename)
-        subprocess.call(['vim', '-O', options.smarty, options.phtml])
+        if options.vim_split:
+            subprocess.call(['vim', '-O', input_filename, output_filename])
     elif options.directory:
         for dirname, dirnames, filenames in os.walk(options.directory):
             for subdirname in dirnames:
