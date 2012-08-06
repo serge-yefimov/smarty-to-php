@@ -456,8 +456,9 @@ class TreeWalker(object):
         }
                 
         # Walking the expression that starts a modifier statement.
-        variable = self.__walk_tree(modifier_handler, ast, "")
-        return "%s%s" % (code, variable)
+        modifier = self.__walk_tree(modifier_handler, ast, "")
+        code = "%s%s" % (code, modifier)
+        return code
         
     """
     The right-hand side of the modifier
@@ -625,7 +626,7 @@ class TreeWalker(object):
         # Walking the expressions in an if statement.
         code = self.__walk_tree (self.param_handler, ast, code)
         
-        code = "%s): ?>" % self.rreplace(code, ', ', '', 1)
+        code = "%s): ?>" % self.rreplace(code, ',', '', 1)
          
         # The content inside the if statement.
         code = self.__walk_tree (self.language_handler, ast, code)
@@ -654,7 +655,7 @@ class TreeWalker(object):
         code = "%s<? elseif (" % code
 
         # Walking the expressions in an elseif statement.
-        code = "%s): ?>" % self.rreplace(self.__walk_tree (self.param_handler, ast, code), ', ', '', 1)
+        code = "%s): ?>" % self.rreplace(self.__walk_tree (self.param_handler, ast, code), ',', '', 1)
 
         return self.__walk_tree (self.language_handler, ast, code)
 
