@@ -14,3 +14,4 @@ suffix="png"}
 {GURI siteImage=apps/apps_dozuki.png}
 {BURI customCSS=''}
 {CURI customCSS=''}
+{GURI tag=FIND_ME_A_CONSTANT}
