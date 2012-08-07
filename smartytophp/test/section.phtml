@@ -1,0 +1,10 @@
+<? for ($i = 0, $iteration = 1; $i < $listDiv->cols; $i++, $iteration++): ?>
+      <ul class="contributeList">
+         <? foreach ($listDiv->getColLinks($i) as $name => $data): ?>
+            <? if ($name != 'viewMore'): ?>
+               <li><a href="<?= $data['url'] ?>"><?= $name ?></a></li>
+            <? endif; ?>
+         <? endforeach; ?>
+      </ul>
+<? endfor; ?>
+
