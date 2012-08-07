@@ -522,7 +522,7 @@ class TreeWalker(object):
             value = self.__walk_tree(uri_handler, v, "")
             if i == 0:
                 if key == 'tag':
-                    code = "%s%s('%s', " % (code, key, value)
+                    code = "%s%s('%s', " % (code, key, value.replace("'", ""))
                 else:
                     code = "%s%s(%s, " % (code, key, value)
             else:
