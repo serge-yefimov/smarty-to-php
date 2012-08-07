@@ -398,7 +398,7 @@ class TreeWalker(object):
         if not args == '':
             args = "%s)" % self.rreplace(args, ', ', '', 1)
 
-        return "%s<?= $this->render(%s%s); ?>" % (code, filename, args)
+        return "%s<? $this->render(%s%s); ?>" % (code, filename, args)
 
     """
     Smarty functions are mapped to a modifier in
