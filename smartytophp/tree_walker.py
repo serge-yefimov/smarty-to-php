@@ -521,7 +521,10 @@ class TreeWalker(object):
             key = self.__walk_tree(self.symbol_handler, v, "")
             value = self.__walk_tree(uri_handler, v, "")
             if i == 0:
-                code = "%s%s(%s, " % (code, key, value)
+                if key == 'tag':
+                    code = "%s%s('%s', " % (code, key, value)
+                else:
+                    code = "%s%s(%s, " % (code, key, value)
             else:
                 if value in need_quotes:
                     code = "%s'%s', " % (code, value)
