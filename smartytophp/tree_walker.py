@@ -38,6 +38,7 @@ class TreeWalker(object):
             'lt_operator': self.lt_operator,
             'gt_operator': self.gt_operator,
             'ne_operator': self.ne_operator,
+            'eee_operator': self.eee_operator,
             'nee_operator': self.nee_operator,
             'not_operator': self.not_operator,
             'mod': self.mod_operator,
@@ -51,6 +52,7 @@ class TreeWalker(object):
             'not_operator': self.not_operator,
             'colon_operator': self.not_operator,
             'and_operator': self.and_operator,
+            'nee_operator': self.nee_operator,
             'equals_operator': self.equals_operator,
             'gte_operator': self.gte_operator,
             'lte_operator': self.lte_operator,
@@ -527,7 +529,7 @@ class TreeWalker(object):
                     code = "%s%s, " % (code, value)
             i += 1
 
-        return "%s) ?> " % self.rreplace(code, ', ', '', 1)
+        return "%s) ?>" % self.rreplace(code, ', ', '', 1)
 
     def wiki(self, ast, code):
         uri_handler = {
@@ -545,7 +547,7 @@ class TreeWalker(object):
             value = self.__walk_tree(uri_handler, v, "")
             code = "%s%s, " % (code, value)
 
-        return "%s) ?> " % self.rreplace(code, ', ', '', 1)
+        return "%s) ?>" % self.rreplace(code, ', ', '', 1)
 
     def guri(self, ast, code):
         return self.uri(ast, code, "GuideURI::")
@@ -712,10 +714,16 @@ class TreeWalker(object):
         return '%s != ' % code
 
     """
-    ne, neq, != opeartor in Smarty.
+    !== opeartor in Smarty.
     """
     def nee_operator(self, ast, code):
         return '%s !== ' % code
+
+    """
+    === opeartor in Smarty.
+    """
+    def eee_operator(self, ast, code):
+        return '%s === ' % code
     
     """
     &&, and operator in Smarty.

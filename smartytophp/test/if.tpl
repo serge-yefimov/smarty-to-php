@@ -13,7 +13,7 @@
 
 {if $modVoteAllowed|default:false && ($curUserid != $post->userid || $canForceVote|default:false)}{/if}
 {if $aConf->search !== false} for <em>{$aConf->search|wordbreak:20}</em>{/if}
-{if $question->userid == $curUserid &&
+{if $question->userid === $curUserid &&
  (!$post->isQuestion) && !($question->is_discussion &&
  $static->call('ServerConstants', 'getSetting', 'feature-answers-is-discussion'))}
    &bull;

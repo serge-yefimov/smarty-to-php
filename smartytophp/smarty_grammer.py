@@ -64,6 +64,8 @@ def ne_operator():              return ['!=', keyword('ne'), keyword('neq')]
 
 def nee_operator():             return '!=='
 
+def eee_operator():             return '==='
+
 def gt_operator():              return ['>', 'gt']
 
 def lt_operator():              return ['<', 'gt']
@@ -72,7 +74,7 @@ def lte_operator():             return ['<=']
 
 def gte_operator():             return ['>=']
 
-def operator():                 return 0, ' ', [nee_operator, ne_operator, at_operator, and_operator, mod, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, or_operator], junk
+def operator():                 return 0, ' ', [nee_operator, ne_operator, eee_operator, at_operator, and_operator, mod, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, or_operator], junk
 
 """
 Smarty variables.

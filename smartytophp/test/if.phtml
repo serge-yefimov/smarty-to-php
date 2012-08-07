@@ -11,7 +11,7 @@
 
 <? if (check($modVoteAllowed, false) && ($curUserid != $post->userid || check($canForceVote, false))): ?><? endif; ?>
 <? if ($aConf->search !== false): ?> for <em><?= wordbreak($aConf->search, 20) ?></em><? endif; ?>
-<? if ($question->userid == $curUserid && (!$post->isQuestion) && !($question->is_discussion)): ?>
+<? if ($question->userid === $curUserid && (!$post->isQuestion) && !($question->is_discussion)): ?>
    &bull;
    <a id="acceptAnswer-<?= $post->postid ?>" class="muted toggleAcceptLink" 
    data-postid="<?= $post->postid ?>">
