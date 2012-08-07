@@ -1,0 +1,12 @@
+<li><? if (!ServerConstants::getSetting('answers-tag-only-navigation')): ?>
+      <? if ($question->device): ?>
+         <a class="muted" href="<?= GuideURI::viewAnswersDevice($question->device) ?> "
+          ><?= wordbreak($question->device, 15) ?></a>
+      <? else: ?>
+         <span><?= ___("[No %1]", $objectName.upperSingular) ?></span>
+      <? endif; ?>
+   <? endif; ?>
+   <? if (ServerConstants::getSetting('feature-answers-is-discussion') && $question->is_discussion): ?>
+      <span><?= ___("Discussion Topic") ?></span>
+   <? endif; ?>
+</li>

@@ -1,0 +1,19 @@
+<? foreach ($data['modes'] as $modeId => $modeData): ?> <li class="muted"><a 
+    href="<?= GuideURI::viewAnswersTag($questionTag) ?> " 
+    class="muted"><?= wordbreak($questionTag, 15) ?></a></li>
+<? endforeach; else: ?>
+<? endforeach; ?>
+
+<? foreach ($question->separatedTags as $questionTag): ?> <li class="muted"><a 
+    href="<?= GuideURI::viewAnswersTag($questionTag) ?> " 
+    class="muted"><?= wordbreak($questionTag, 15) ?></a></li>
+<? endforeach; else: ?>
+   <li style="display:none">&nbsp;</li> <? /*  Placeholder so that <ul> does't break  */ ?>
+<? endforeach; ?>
+
+<? /* 
+   <div id="wikiTitleTip">
+      <p>foo</p>
+   </div>
+ */ ?>
+

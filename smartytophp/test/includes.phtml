@@ -1,0 +1,5 @@
+<?= $this->render(header['tpl']); ?>
+<?= $this->render("header.phtml", array("attrib_name"=>"attrib value")); ?>
+<?= $this->render($includeFile); ?>
+<?= $this->render("Shared/file.phtml"); ?>
+<?= $this->render('Shared/tabs.phtml', array("mainTabNav"=>$aConf->getIndexTabs(), "tabId"=>'questionTabs')); ?>

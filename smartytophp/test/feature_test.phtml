@@ -1,0 +1,25 @@
+
+<? /*  If there is a Facebook app, set the app_id and admins, along with
+   whatever else is passed  */ ?>
+<? if (check($fbSettings, false)): ?>
+   <? foreach ($fbSettings as $key => $value): ?> 
+      <meta property="fb:<?= $key ?>" content="<?= escape($value, 'html') ?>" /> 
+   <? endforeach; ?>
+<? endif; ?>
+
+<? if (ServerConstants::useCustomCSS() && !check($onManage, false)): ?>
+   <? if (ServerConstants::getValue('CUSTOM_CSS_SERVED_FROM_S3')): ?>
+      <link rel="stylesheet" type="text/css" href="<?= URIBase::customCSS('') ?> " />
+   <? else: ?>
+      <style type="text/css">
+         <?= ServerConstants::getSetting('appearance-css') ?>
+      </style>
+   <? endif; ?>
+<? endif; ?>
+
+
+
+
+<? foreach ($top as $template): ?> 
+   <?= $this->render($template); ?>
+<? endforeach; ?>

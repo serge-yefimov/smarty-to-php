@@ -1,0 +1,14 @@
+<?= GuideURI::viewQuestion($question->postid, $comment->commentid) ?> 
+<?= $story['images["0"]'] ?>
+<?= GuideURI::viewProfile($info['userid'], $info['username']) ?> 
+<?= GuideURI::guideImageid($story['images["0"]'], 'medium') ?> 
+href="<?= GuideURI::postHistory($post->postid) ?> "><?= ___("Edited by") ?></a>
+<?= GuideURI::askAboutDevice($aConf->getDevice()) ?> 
+<?= GuideURI::css($stylesheet) ?> 
+<?= GuideURI::js($script) ?> 
+<?= GuideURI::productImage(106015, 2, 'png') ?> 
+<?= GuideURI::productImage(106015, 2, "png") ?> 
+<?= GuideURI::viewGuideInCooliris($guideid, $langid) ?> 
+<?= GuideURI::siteImage('apps/apps_dozuki.png') ?> 
+<?= URIBase::customCSS('') ?> 
+<?= URIGenerator::customCSS('') ?> 

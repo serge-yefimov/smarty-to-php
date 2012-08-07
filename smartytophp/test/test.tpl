@@ -1,1 +1,1 @@
-{$story.images[0]}
+{$story.images}

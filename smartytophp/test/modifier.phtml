@@ -1,0 +1,11 @@
+<?= truncate($blurb->text, 80, "...") ?> 
+<?= truncate($ad->title, escape(60)) ?>
+<?= truncate($blurb->title, 28, "...") ?>
+<?= regex_replace($result->mini, "/^http:/i", "https:") ?>
+<?= regex_replace($username, "/ .*/", truncate("", 12, "...")) ?>
+<?= regex_replace(local_date($info['date']), "/(.*) @ (.*)/", "\$1<br />\$2") ?>
+<td><?= regex_replace($item->action, "/_/", capitalize(lower("))) ?>
+<?= lower($item) ?>
+<?= capitalize(lower($item)) ?>
+<?= escape($item, 'html') ?>
+<span class="blurbImageStatNum"><?= nice_number($bData['stats']['topics']['total']) ?></span>

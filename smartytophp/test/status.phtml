@@ -1,0 +1,12 @@
+<? if ($conflict): ?>
+ <? captureStart('CHANGE_ME'); <?= ___("%1Sorry,
+another
+user saved a %2newer version%3 of this post%4 while you were editing it.", "<strong>", "<a href="#currentPostView">", "</a>", "</strong>") ?>
+<?= ___("Your changes have not been saved.") ?> <?= ___("If you're sure you want to make
+this
+change, click the Submit button again to overwrite the newer version of this
+post.") ?>
+ <? $CHANGE_ME = captureEnd('CHANGE_ME'); ?><?= $this->addStatus($CHANGE_ME, array("type"=>"bad", "id"=>"conflictMessage")); ?>
+<? endif; ?>
+
+<?= $this->render("statuses.phtml"); ?>

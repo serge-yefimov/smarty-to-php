@@ -1,0 +1,11 @@
+
+<title><?= escape($title, 'html') ?></title>
+<meta name="description" content="<?= escape($metaDescription, 'html') ?>" />
+<meta name="title" content="<?= escape($title, 'html') ?>" />
+<meta name="keywords" content="<?= escape($metaKeywords, 'html') ?>" />
+
+<? if (check($fbSettings, false)): ?>
+   <? foreach ($fbSettings as $key => $value): ?> 
+      <meta property="fb:<?= $key ?>" content="<?= escape($value, 'html') ?>" /> 
+   <? endforeach; ?>
+<? endif; ?>
