@@ -15,3 +15,5 @@ suffix="png"}
 {BURI customCSS=''}
 {CURI customCSS=''}
 {GURI tag=FIND_ME_A_CONSTANT}
+{GURI tag="FIND_ME_A_CONSTANT"}
+{GURI tag='FIND_ME_A_CONSTANT'}

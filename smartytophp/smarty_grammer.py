@@ -74,7 +74,7 @@ def lte_operator():             return ['<=']
 
 def gte_operator():             return ['>=']
 
-def operator():                 return 0, ' ', [nee_operator, ne_operator, eee_operator, at_operator, and_operator, mod, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator, or_operator], junk
+def operator():                 return 0, ' ', [nee_operator, ne_operator, not_operator, eee_operator, at_operator, and_operator, or_operator, mod, equals_operator, gte_operator, lte_operator, lt_operator, gt_operator]
 
 """
 Smarty variables.
@@ -132,12 +132,12 @@ def default():                  return keyword('default')
 """
 Base Expression
 """
-def expression():               return [modifier, static_call, object_dereference, php_fun, function_statement, array, symbol, string, variable_string] 
+def expression():               return 0, operator, [modifier, static_call, object_dereference, php_fun, function_statement, array, symbol, string, variable_string] 
 
 """
 Smarty statements.
 """
-def parameter():                return junk, -1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren, -1, (-1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren), junk
+def parameter():                return junk, -1, [operator, not_operator, at_operator], -1, left_paren, -1, operator, expression, -1, right_paren, -1, (-1, [operator, not_operator, at_operator], -1, left_paren, expression, -1, right_paren), junk
 
 def if_statement():             return '{', keyword('if'), -2, parameter, '}', -1, smarty_language, '{/', keyword('if'), '}'
 
@@ -194,7 +194,7 @@ def guri_statement():           return '{', keyword('GURI'), -2, uri_param, '}'
 
 def wiki_statement():           return '{', keyword('WIKI'), -2, uri_param, '}'
 
-def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\:\;\=\+\-\.\#\_\$\%\<\>\/\'\"\| ]+'), junk
+def translate_params():         return junk, re.compile(r'[A-Za-z0-9\&\)\(\:\;\=\+\-\.\#\_\$\%\<\>\/\'\"\| ]+'), junk
 
 def translate():                return '{', keyword('t'), 0, translate_params, '}', -2, smarty_language, '{/', keyword('t'), '}'
 

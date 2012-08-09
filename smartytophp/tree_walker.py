@@ -12,8 +12,8 @@ class TreeWalker(object):
     # Lookup tables for performing some token
     # replacements not addressed in the grammar.
     replacements = {
-        'smarty\.foreach.*\.index': 'index fix this##',
-        'smarty\.foreach.*\.iteration': 'iteration fix this##'
+        '$smarty\.foreach\.*\.index': '$index',
+        '$smarty\.foreach\.*\.iteration': '$iteration'
     }
     
     keywords = {
@@ -506,7 +506,7 @@ class TreeWalker(object):
 
     def uri(self, ast, code, base_class):
         method_name = args = ''
-        need_quotes = ['mini', 'thumbnail', 'medium', 'huge', 'original']
+        need_quotes = ['mini', 'thumbnail', 'standard', 'large' 'medium', 'huge', 'original']
 
         uri_handler = {
             'expression': self.expression,
@@ -522,7 +522,7 @@ class TreeWalker(object):
             value = self.__walk_tree(uri_handler, v, "")
             if i == 0:
                 if key == 'tag':
-                    code = "%s%s('%s', " % (code, key, value.replace("'", ""))
+                    code = "%s%s('%s', " % (code, key, value.replace("'", "").replace('"', ""))
                 else:
                     code = "%s%s(%s, " % (code, key, value)
             else:
@@ -760,6 +760,7 @@ class TreeWalker(object):
     def expression(self, ast, code):
 
         handler = {
+            'operator': self.operator,
             'modifier': self.modifier,
             'static_call': self.static_call,
             'object_dereference': self.object_dereference,
