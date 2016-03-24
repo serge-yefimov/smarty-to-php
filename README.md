@@ -10,7 +10,7 @@ the conversion.
 Begin the process with:
    ```
    git clone git@github.com:iFixit/smarty-to-php.git
-   cd smartytophp
+   cd smarty-to-php
    sudo python setup.py install
    ```
 Example run: `python smartytophp/main.py --smarty-file=smartytophp/test/vars.tpl --phtml-file=vars.phtml`
