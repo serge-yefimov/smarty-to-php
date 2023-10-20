@@ -17,6 +17,7 @@ class TestSmartyGrammar(unittest.TestCase):
         self.inputFiletype = '.tpl'
         self.testDir = 'test'
         self.input_files = self.output_files = []
+        self.maxDiff = 20000
 
         for dirname, dirnames, filenames in os.walk(self.testDir):
             for filename in filenames:
@@ -33,19 +34,22 @@ class TestSmartyGrammar(unittest.TestCase):
         print(self.input_files)
         for filename in self.input_files:
             fn = os.path.basename(filename)
-            output_file = os.path.splitext(fn)[0] + self.outputFiletype
-            print(("outputfile: ",output_file))
-            output = open(self.testDir + '/' + output_file)
-
-            print(("inputfile: ",filename)) 
+            print("in: ", fn) 
             statement = open(filename)
 
-            # Test an if statement (no else or elseif)
-            ast = parse_string(statement.read())
-            tree_walker = TreeWalker(ast)
-            testOutput = tree_walker.code
-            self.assertEqual(testOutput, output.read())
+            output_file = os.path.splitext(fn)[0] + self.outputFiletype
+            print("out:", output_file)
+            output = open(self.testDir + '/' + output_file)
 
+            # Test an if statement (no else or elseif)
+            try:
+                ast = parse_string(statement.read())
+                tree_walker = TreeWalker(ast)
+                testOutput = tree_walker.code
+                self.assertEqual(testOutput, output.read())
+            finally:
+                statement.close()
+                output.close()
 
 def suite():
     suite = unittest.TestSuite()
