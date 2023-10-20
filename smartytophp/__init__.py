@@ -1,2 +1,2 @@
-import tree_walker
-import main
+from . import tree_walker
+from . import main

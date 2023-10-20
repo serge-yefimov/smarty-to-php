@@ -82,7 +82,7 @@ class TreeWalker(object):
     """
     def __walk_tree_reversed(self, handlers, ast, code):
         for k, v in ast[::-1]:
-            if k in handlers:
+            if handlers.has_key(k):
                 if k == 'comment':
                     # Comments in php have <? /* not {*
                     code = "%s<? /* %s */ ?>" % (
@@ -100,7 +100,7 @@ class TreeWalker(object):
     """
     def __walk_tree(self, handlers, ast, code):
         for k, v in ast:
-            if k in handlers:
+            if handlers.has_key(k):
                 if k == 'comment':
                     # Comments in php have <? /* not {*
                     code = "%s<? /* %s */ ?>" % (
@@ -163,7 +163,7 @@ class TreeWalker(object):
         if len(params) > 1:
             args = ", array("
 
-        for k, v in list(params.items()):
+        for k, v in params.items():
             args += '"%s"=>%s, ' % (k, v)
                 
         # if there are args, remove the trailing `,` from the array
@@ -389,7 +389,7 @@ class TreeWalker(object):
         if len(params) > 1 and 'file' in params:
             args = ", array("
 
-        for k, v in list(params.items()):
+        for k, v in params.items():
             if k == 'file':
                 filename = re.sub("\.tpl", ".phtml", v)
             # create additional args array
@@ -435,7 +435,7 @@ class TreeWalker(object):
         expression = self.__walk_tree (self.expression_handler, ast, "")
         
         # Perform any keyword replacements if found.        
-        if expression in self.keywords:
+        if self.keywords.has_key(expression):
             return "%s%s" % (code, self.keywords[expression])
                 
         return "%s<?= %s ?>" % (code, expression)
@@ -776,7 +776,7 @@ class TreeWalker(object):
         expression = self.__walk_tree (handler, ast, "")
         
         # Should we perform any replacements?
-        for k, v in list(self.replacements.items()):
+        for k, v in self.replacements.items():
             if re.match(k, expression):
                 expression = v
                 break
