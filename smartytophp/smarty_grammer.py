@@ -2,6 +2,7 @@
 Inspired by FreshBooks https://github.com/freshbooks/smartytotwig
 Hacked to convert to PHP
 """
+from __future__ import absolute_import
 
 import re, fileinput
 from pyPEG import *

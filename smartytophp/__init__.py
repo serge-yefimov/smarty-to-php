@@ -1,2 +1,5 @@
-import tree_walker
-import main
+__package__ = 'smartytophp'
+
+from . import tree_walker
+from . import main
+

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from tree_walker import TreeWalker
 from smarty_grammer import smarty_language
 import unittest, time, os
@@ -28,14 +30,14 @@ class TestSmartyGrammar(unittest.TestCase):
         """
         Test several different types of if statements.
         """
-        print self.input_files
+        print(self.input_files)
         for filename in self.input_files:
             fn = os.path.basename(filename)
             output_file = os.path.splitext(fn)[0] + self.outputFiletype
-            print "outputfile: ",output_file
+            print(("outputfile: ",output_file))
             output = open(self.testDir + '/' + output_file)
 
-            print "inputfile: ",filename 
+            print(("inputfile: ",filename)) 
             statement = open(filename)
 
             # Test an if statement (no else or elseif)

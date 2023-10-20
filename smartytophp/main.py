@@ -21,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 import os, optparse, sys, fileinput, subprocess
 from tree_walker import TreeWalker
 from smarty_grammer import smarty_language
@@ -82,7 +84,7 @@ def main():
     parser.add_option(opt4)
     (options, args) = parser.parse_args(sys.argv)
 
-    print options, args
+    print((options, args))
 
     input_filename = output_filename = ''
     if options.smarty:
@@ -100,24 +102,24 @@ def main():
     elif options.directory:
         for dirname, dirnames, filenames in os.walk(options.directory):
             for subdirname in dirnames:
-                print os.path.join(dirname, subdirname)
+                print(os.path.join(dirname, subdirname))
             for filename in filenames:
                 input_filename = os.path.join(dirname, filename)
                 if filename.endswith('.tpl'):
                     output_filename = os.path.join(dirname, os.path.splitext(filename)[0]+output_file_type)
                     if not os.path.exists(output_filename):
-                        print "Converting " + input_filename + "..." 
+                        print("Converting " + input_filename + "...") 
                         convert(input_filename, output_filename)
                     else:
-                        print "File "+output_filename+" Exists, skipping..."
+                        print("File "+output_filename+" Exists, skipping...")
 
 def convert(input_file, output_file):
     if os.stat(input_file)[6] == 0:
-        print "Empty File " + output_file
+        print("Empty File " + output_file)
         f = open(output_file, 'w+')
         f.write("<? /* Empty File */ ?>\n");
         f.close()
-        print 'Template outputted to %s' % output_file
+        print('Template outputted to %s' % output_file)
         return 
 
     # Parse the file into tokens
@@ -133,7 +135,7 @@ def convert(input_file, output_file):
     f.close()
 
     # Give some feedback
-    print 'Template outputted to %s' % output_file
+    print('Template outputted to %s' % output_file)
 
 if __name__ == "__main__":
     main()

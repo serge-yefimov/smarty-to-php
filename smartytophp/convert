@@ -1,4 +1,7 @@
 #! /bin/bash
+
+PYTHON=python3
+
 #if [ $2 -eq 1 ] ; then 
 #   python26 main.py -d $1
 #else 
@@ -9,5 +12,5 @@ filename=$1
 input=$testdir$filename$tpl
 output=$filename$phtml
 
-python26 main.py -s $input -p $output
+$PYTHON main.py -s $input -p $output
 #fi

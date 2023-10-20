@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from distutils.core import setup
 #from setuptools import setup, find_packages
-import ConfigParser, os
+import configparser, os
 
 # Read version.conf and use the version #.
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.readfp(open('version.conf'))
 
 setup(
