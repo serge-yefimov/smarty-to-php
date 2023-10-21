@@ -16,7 +16,8 @@ class TestSmartyGrammar(unittest.TestCase):
         self.outputFiletype = '.phtml'
         self.inputFiletype = '.tpl'
         self.testDir = 'test'
-        self.input_files = self.output_files = []
+        self.input_files = []
+        self.output_files = []
         self.maxDiff = 20000
 
         for dirname, dirnames, filenames in os.walk(self.testDir):
@@ -58,9 +59,4 @@ def suite():
         
 if __name__ == '__main__':
     unittest.main()
-    """
-    suiteFew = unittest.TestSuite()
-    suiteFew.addTest(TestSmartyGrammer("test_statement"))
-    unittest.TextTestRunner(verbosity=2).run(suite())
-    """
 
